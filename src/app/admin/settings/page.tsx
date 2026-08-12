@@ -1,0 +1,35 @@
+import { saveBusinessSettings } from "@/app/admin/actions";
+import { getSettings } from "@/lib/settings";
+
+export default async function SettingsPage() {
+  const s = await getSettings();
+  return (
+    <form className="card panel static" style={{ maxWidth: 640 }} action={saveBusinessSettings}>
+      <h3 style={{ marginBottom: 18 }}>Business Details</h3>
+      <div className="form-row">
+        <div className="field"><label>Business Name</label><input name="businessName" defaultValue={s.businessName} /></div>
+        <div className="field"><label>Tagline</label><input name="tagline" defaultValue={s.tagline} /></div>
+        <div className="form-row two">
+          <div className="field"><label>GSTIN</label><input name="gstin" defaultValue={s.gstin} /></div>
+          <div className="field"><label>Explosives License No.</label><input name="license" defaultValue={s.license} /></div>
+        </div>
+        <div className="field"><label>Address</label><textarea name="address" rows={2} defaultValue={s.address} /></div>
+        <div className="field"><label>City line (footer)</label><input name="cityLine" defaultValue={s.cityLine} /></div>
+        <div className="form-row two">
+          <div className="field"><label>Phone</label><input name="phone" defaultValue={s.phone} /></div>
+          <div className="field"><label>Phone 2</label><input name="phone2" defaultValue={s.phone2} /></div>
+        </div>
+        <div className="form-row two">
+          <div className="field"><label>WhatsApp Number</label><input name="whatsapp" defaultValue={s.whatsapp} /></div>
+          <div className="field"><label>Email</label><input name="email" defaultValue={s.email} /></div>
+        </div>
+        <div className="field"><label>Working hours</label><input name="hours" defaultValue={s.hours} /></div>
+        <div className="field"><label>Map embed URL</label><input name="mapEmbed" defaultValue={s.mapEmbed} /></div>
+        <div className="field"><label>Top bar marquee</label><textarea name="marquee" rows={2} defaultValue={s.marquee} /></div>
+      </div>
+      <div style={{ marginTop: 20 }}>
+        <button className="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  );
+}

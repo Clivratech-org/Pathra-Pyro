@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum LeadStatus {
+  new
+  contacted
+  converted
+  lost
+}
+
+enum OfferStatus {
+  active
+  paused
+  expired
+}
+
+enum OfferApplies {
+  ALL
+  CATEGORY
+  COMBOS
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum OrderChannel {
+  Website
+  WhatsApp
+  Phone_Call
+  Walk_in
+}
+
+enum ShipmentStatus {
+  placed
+  confirmed
+  packed
+  dispatched
+  in_transit
+  delivered
+  cancelled
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String?    @unique
+  phone        String     @unique
+  passwordHash String
+  role         Role       @default(CUSTOMER)
+  address      String?
+  pincode      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  orders       Order[]
+  cartItems    CartItem[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  emoji       String
+  description String
+  coverPath   String?
+  sortOrder   Int       @default(0)
+  products    Product[]
+  offers      Offer[]
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id])
+  mrp         Int
+  salePrice   Int
+  stock       Int            @default(0)
+  featured    Boolean        @default(false)
+  popularity  Float          @default(0)
+  active      Boolean        @default(true)
+  images      ProductImage[]
+  cartItems   CartItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  path      String
+  alt       String  @default("")
+  sortOrder Int     @default(0)
+  isCover   Boolean @default(false)
+}
+
+model ComboPack {
+  id        String  @id @default(cuid())
+  tier      String
+  name      String
+  slug      String  @unique
+  itemsJson String
+  mrp       Int
+  salePrice Int
+  imagePath String?
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model Offer {
+  id         String       @id @default(cuid())
+  title      String
+  pct        Int
+  appliesTo  OfferApplies @default(ALL)
+  categoryId String?
+  category   Category?    @relation(fields: [categoryId], references: [id])
+  startDate  DateTime
+  endDate    DateTime
+  status     OfferStatus  @default(active)
+  usedPct    Int          @default(0)
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  comboId   String?
+  qty       Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  name        String
+  phone       String
+  interest    String
+  source      String
+  status      LeadStatus @default(new)
+  notes       String     @default("")
+  lastContact DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique
+  userId            String?
+  user              User?         @relation(fields: [userId], references: [id])
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  address           String
+  pincode           String
+  subtotal          Int
+  savings           Int
+  total             Int
+  paymentStatus     PaymentStatus @default(pending)
+  channel           OrderChannel  @default(Website)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  items             OrderItem[]
+  shipment          Shipment?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind      String
+  refId     String?
+  name      String
+  category  String
+  imagePath String?
+  mrp       Int
+  salePrice Int
+  qty       Int
+}
+
+model Shipment {
+  id        String          @id @default(cuid())
+  orderId   String          @unique
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    ShipmentStatus  @default(placed)
+  note      String          @default("")
+  events    ShipmentEvent[]
+  photos    ShipmentPhoto[]
+  updatedAt DateTime        @updatedAt
+}
+
+model ShipmentEvent {
+  id         String         @id @default(cuid())
+  shipmentId String
+  shipment   Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status     ShipmentStatus
+  note       String         @default("")
+  createdAt  DateTime       @default(now())
+}
+
+model ShipmentPhoto {
+  id         String         @id @default(cuid())
+  shipmentId String
+  shipment   Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  path       String
+  caption    String         @default("")
+  stage      ShipmentStatus
+  createdAt  DateTime       @default(now())
+}
+
+model Setting {
+  id   String @id @default("main")
+  data String
+}

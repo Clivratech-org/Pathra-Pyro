@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sri Pathra Pyro World — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#0d0716; --night-2:#160b26; --panel:#150c24;
+  --maroon:#5c0f1f; --maroon-2:#7a1526;
+  --gold:#e8b94d; --gold-2:#f4d78a; --marigold:#ff8a2b; --ember:#ff5a3c;
+  --cream:#faf1e0; --cream-dim:#b8ab97;
+  --green:#5fbf6f; --red:#ff6b6b; --blue:#5b9dff;
+  --line:rgba(232,185,77,0.16);
+  --disp:'Cinzel',serif; --body:'Manrope',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:var(--body); background:var(--night); color:var(--cream); min-height:100vh;}
+::-webkit-scrollbar{width:8px; height:8px;} ::-webkit-scrollbar-thumb{background:var(--maroon-2); border-radius:8px;}
+a{color:inherit; text-decoration:none;} button{font-family:var(--body); cursor:pointer;}
+h1,h2,h3,h4{font-family:var(--disp); color:var(--gold-2); font-weight:700;}
+
+.app{display:grid; grid-template-columns:260px 1fr; min-height:100vh;}
+@media(max-width:900px){ .app{grid-template-columns:0 1fr;} }
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  background:linear-gradient(180deg, var(--night-2), var(--night));
+  border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  transition:.3s; z-index:50;
+}
+@media(max-width:900px){ .sidebar{position:fixed; left:-280px; width:260px;} .sidebar.open{left:0;} }
+.sb-brand{display:flex; align-items:center; gap:12px; padding:6px 8px 26px; border-bottom:1px solid var(--line); margin-bottom:20px;}
+.sb-brand .mark{width:42px; height:42px; border-radius:50%; background:conic-gradient(from 90deg,var(--gold),var(--marigold),var(--ember),var(--gold)); display:flex; align-items:center; justify-content:center; font-family:var(--disp); font-weight:800; color:var(--night);}
+.sb-brand .txt{line-height:1.2;}
+.sb-brand .txt b{font-family:var(--disp); font-size:0.95rem; color:var(--gold-2); display:block;}
+.sb-brand .txt small{font-family:var(--mono); font-size:0.6rem; color:var(--cream-dim); letter-spacing:0.1em;}
+
+.sb-group{margin-bottom:22px;}
+.sb-label{font-family:var(--mono); font-size:0.65rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--cream-dim); padding:0 12px; margin-bottom:8px;}
+.sb-link{
+  display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; color:var(--cream-dim);
+  font-size:0.88rem; font-weight:600; margin-bottom:2px; border:none; background:none; width:100%; text-align:left;
+}
+.sb-link:hover{background:rgba(232,185,77,0.08); color:var(--cream);}
+.sb-link.active{background:linear-gradient(120deg, rgba(232,185,77,0.22), rgba(255,138,43,0.14)); color:var(--gold-2);}
+.sb-link .ic{width:20px; text-align:center;}
+.sb-badge{margin-left:auto; background:var(--ember); color:#fff; font-family:var(--mono); font-size:0.62rem; padding:2px 7px; border-radius:20px;}
+
+/* ============ MAIN ============ */
+main{padding:26px 32px 60px; max-width:100%; overflow-x:hidden;}
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; gap:16px; flex-wrap:wrap;}
+.topbar .left{display:flex; align-items:center; gap:14px;}
+.menu-btn{display:none; background:none; border:1px solid var(--line); color:var(--gold-2); width:38px; height:38px; border-radius:10px; font-size:1.1rem;}
+@media(max-width:900px){ .menu-btn{display:block;} }
+.page-title{font-size:1.5rem;}
+.page-sub{font-family:var(--mono); font-size:0.75rem; color:var(--cream-dim); margin-top:4px;}
+.top-actions{display:flex; align-items:center; gap:12px;}
+.search-mini{background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:30px; padding:9px 16px; font-size:0.82rem; color:var(--cream-dim); width:220px;}
+.search-mini input{background:none; border:none; color:var(--cream); outline:none; width:100%; font-family:var(--body);}
+.admin-chip{display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid var(--line); padding:6px 14px 6px 6px; border-radius:30px;}
+.admin-chip .av{width:32px; height:32px; border-radius:50%; background:linear-gradient(120deg,var(--gold),var(--ember)); display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--night); font-size:0.8rem;}
+.admin-chip .nm{font-size:0.8rem; font-weight:700;}
+.admin-chip .rl{font-size:0.65rem; color:var(--cream-dim); font-family:var(--mono);}
+
+.page{display:none;} .page.active{display:block; animation:fadein .4s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+/* ============ CARDS / GRID ============ */
+.card{background:rgba(255,255,255,0.025); border:1px solid var(--line); border-radius:16px;}
+.kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:26px;}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.kpi-grid{grid-template-columns:1fr;}}
+.kpi{padding:22px; position:relative; overflow:hidden;}
+.kpi .ic{width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:14px; background:linear-gradient(140deg, rgba(232,185,77,0.2), rgba(255,90,60,0.14));}
+.kpi .val{font-family:var(--disp); font-size:1.7rem; color:var(--cream);}
+.kpi .lbl{font-size:0.78rem; color:var(--cream-dim); margin-top:4px;}
+.kpi .delta{font-family:var(--mono); font-size:0.7rem; margin-top:10px; display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px;}
+.delta.up{background:rgba(95,191,111,0.14); color:var(--green);}
+.delta.down{background:rgba(255,107,107,0.14); color:var(--red);}
+
+.dash-grid{display:grid; grid-template-columns:1.5fr 1fr; gap:20px;}
+@media(max-width:1080px){.dash-grid{grid-template-columns:1fr;}}
+.panel{padding:22px;}
+.panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
+.panel-head h3{font-size:1.02rem;}
+.panel-head .link{font-family:var(--mono); font-size:0.72rem; color:var(--marigold);}
+
+/* bar chart (css-based) */
+.bar-chart{display:flex; align-items:flex-end; gap:12px; height:200px; padding-top:10px;}
+.bar-chart .col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:8px;}
+.bar-chart .bar{width:100%; max-width:34px; border-radius:8px 8px 3px 3px; background:linear-gradient(180deg,var(--gold),var(--marigold)); position:relative; transition:1s ease;}
+.bar-chart .lbl{font-family:var(--mono); font-size:0.65rem; color:var(--cream-dim);}
+
+.donut-wrap{display:flex; align-items:center; gap:22px; flex-wrap:wrap; justify-content:center;}
+.legend{display:grid; gap:10px;}
+.legend .row{display:flex; align-items:center; gap:8px; font-size:0.8rem; color:var(--cream-dim);}
+.legend .dot{width:10px; height:10px; border-radius:3px;}
+
+/* ============ TABLE ============ */
+.table-wrap{overflow-x:auto;}
+table{width:100%; border-collapse:collapse; min-width:640px;}
+thead th{
+  font-family:var(--mono); font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--marigold);
+  text-align:left; padding:12px 14px; border-bottom:1px solid var(--line); white-space:nowrap;
+}
+tbody td{padding:13px 14px; border-bottom:1px solid var(--line); font-size:0.85rem; color:var(--cream); vertical-align:middle;}
+tbody tr:hover{background:rgba(232,185,77,0.04);}
+tbody tr:last-child td{border-bottom:none;}
+.cell-sub{font-size:0.72rem; color:var(--cream-dim);}
+.avatar-sm{width:34px; height:34px; border-radius:50%; object-fit:cover;}
+.pill{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:0.68rem; padding:4px 10px; border-radius:20px; font-weight:700;}
+.pill.new{background:rgba(91,157,255,0.15); color:var(--blue);}
+.pill.contacted{background:rgba(232,185,77,0.15); color:var(--gold-2);}
+.pill.converted{background:rgba(95,191,111,0.15); color:var(--green);}
+.pill.lost{background:rgba(255,107,107,0.15); color:var(--red);}
+.pill.active{background:rgba(95,191,111,0.15); color:var(--green);}
+.pill.paused{background:rgba(232,185,77,0.15); color:var(--gold-2);}
+.pill.expired{background:rgba(255,107,107,0.15); color:var(--red);}
+.pill.instock{background:rgba(95,191,111,0.15); color:var(--green);}
+.pill.low{background:rgba(255,138,43,0.15); color:var(--marigold);}
+.pill.out{background:rgba(255,107,107,0.15); color:var(--red);}
+.pill.paid{background:rgba(95,191,111,0.15); color:var(--green);}
+.pill.pending{background:rgba(232,185,77,0.15); color:var(--gold-2);}
+.row-actions{display:flex; gap:6px;}
+.icon-mini{width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,0.02); display:inline-flex; align-items:center; justify-content:center; font-size:0.8rem; color:var(--cream-dim);}
+.icon-mini:hover{border-color:var(--gold); color:var(--gold-2);}
+
+/* ============ TOOLBAR / FILTERS ============ */
+.toolbar{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
+.toolbar .filters{display:flex; gap:10px; flex-wrap:wrap;}
+.chip-f{padding:8px 16px; border-radius:30px; border:1px solid var(--line); background:rgba(255,255,255,0.02); font-size:0.78rem; color:var(--cream-dim);}
+.chip-f.active{background:linear-gradient(120deg,var(--gold),var(--marigold)); color:var(--night); font-weight:700; border-color:transparent;}
+.btn{display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius:30px; font-weight:700; font-size:0.84rem; border:1px solid transparent;}
+.btn-primary{background:linear-gradient(120deg,var(--gold),var(--marigold)); color:var(--night);}
+.btn-primary:hover{transform:translateY(-2px);}
+.btn-outline{border-color:var(--line); color:var(--cream-dim); background:rgba(255,255,255,0.02);}
+.btn-outline:hover{border-color:var(--gold); color:var(--gold-2);}
+.search-box2{position:relative; min-width:230px; flex:1;}
+.search-box2 input{width:100%; padding:11px 16px 11px 38px; border-radius:30px; background:rgba(255,255,255,0.03); border:1px solid var(--line); color:var(--cream); font-size:0.85rem;}
+.search-box2::before{content:"⌕"; position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--gold);}
+
+/* ============ PRODUCT GRID MGMT ============ */
+.pm-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+@media(max-width:1100px){.pm-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.pm-grid{grid-template-columns:1fr;}}
+.pm-card{overflow:hidden;}
+.pm-card img{width:100%; aspect-ratio:1/0.8; object-fit:cover;}
+.pm-card .body{padding:14px 16px;}
+.pm-card .cat{font-size:0.65rem; text-transform:uppercase; color:var(--marigold); font-weight:700; letter-spacing:0.05em;}
+.pm-card h4{font-family:var(--body); font-size:0.92rem; color:var(--cream); margin:4px 0 8px;}
+.pm-card .prow{display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); font-size:0.85rem;}
+.pm-card .prow .sale{color:var(--gold-2); font-weight:700;}
+.pm-card .prow .old{text-decoration:line-through; color:var(--cream-dim); font-size:0.72rem;}
+.pm-card .footer-row{display:flex; justify-content:space-between; align-items:center; margin-top:12px;}
+
+/* ============ MODAL ============ */
+.modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:300; display:none; align-items:center; justify-content:center; padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--night-2); border:1px solid var(--line); border-radius:20px; padding:28px; max-width:480px; width:100%; max-height:88vh; overflow-y:auto;}
+.modal h3{margin-bottom:18px;}
+.form-grid{display:grid; gap:14px;}
+.form-grid.two{grid-template-columns:1fr 1fr;}
+.field label{font-size:0.76rem; color:var(--cream-dim); margin-bottom:6px; display:block;}
+.field input, .field select, .field textarea{width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--line); color:var(--cream); padding:10px 13px; border-radius:10px; font-family:var(--body); font-size:0.86rem;}
+.modal-actions{display:flex; gap:10px; margin-top:20px; justify-content:flex-end;}
+.close-x{position:absolute; top:18px; right:20px; background:none; border:none; color:var(--cream-dim); font-size:1.2rem;}
+
+/* offer cards */
+.offer-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+@media(max-width:980px){.offer-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.offer-grid{grid-template-columns:1fr;}}
+.offer-card{padding:22px; position:relative;}
+.offer-card .top-row{display:flex; justify-content:space-between; align-items:flex-start;}
+.offer-card .pct{font-family:var(--disp); font-size:2rem; color:var(--gold-2);}
+.offer-card h4{font-size:0.98rem; margin:8px 0 4px;}
+.offer-card p{font-size:0.78rem; color:var(--cream-dim); line-height:1.5;}
+.offer-card .meta{display:flex; justify-content:space-between; margin-top:16px; font-family:var(--mono); font-size:0.7rem; color:var(--cream-dim);}
+.progress{height:6px; background:rgba(255,255,255,0.06); border-radius:10px; margin-top:14px; overflow:hidden;}
+.progress .fill{height:100%; background:linear-gradient(90deg,var(--gold),var(--marigold));}
+
+@media print{ .sidebar,.topbar,.toolbar,.row-actions{display:none;} }
+
+/* ============================================================
+   RESPONSIVE POLISH — additional breakpoints & touch refinement
+   ============================================================ */
+html{ -webkit-text-size-adjust:100%; }
+img{ height:auto; }
+
+/* mobile sidebar backdrop */
+.sb-backdrop{position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:40; display:none;}
+.sb-backdrop.show{display:block;}
+
+@media(max-width:1080px){
+  main{padding:22px 20px 50px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+}
+
+@media(max-width:900px){
+  .sidebar{box-shadow:0 0 40px rgba(0,0,0,0.6);}
+  .topbar{align-items:flex-start;}
+  .top-actions{width:100%; justify-content:space-between;}
+  .search-mini{width:auto; flex:1; max-width:220px;}
+  .dash-grid{grid-template-columns:1fr !important;}
+}
+
+@media(max-width:768px){
+  main{padding:18px 16px 46px;}
+  .page-title{font-size:1.25rem;}
+  .kpi-grid{grid-template-columns:1fr 1fr; gap:12px;}
+  .kpi{padding:16px;}
+  .kpi .val{font-size:1.3rem;}
+  .pm-grid{grid-template-columns:repeat(2,1fr); gap:12px;}
+  .offer-grid{grid-template-columns:1fr;}
+  .toolbar{flex-direction:column; align-items:stretch;}
+  .toolbar .filters{overflow-x:auto; flex-wrap:nowrap; padding-bottom:4px;}
+  .search-mini{max-width:none;}
+  .admin-chip .nm, .admin-chip .rl{max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  table{min-width:600px;}
+  .donut-wrap{flex-direction:column;}
+  .modal{padding:22px;}
+}
+
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr;}
+  .pm-grid{grid-template-columns:1fr;}
+  .sb-brand .txt small{display:none;}
+  .admin-chip .rl{display:none;}
+  .form-grid.two{grid-template-columns:1fr;}
+  .search-mini{display:none;}
+  .bar-chart{height:150px;}
+}
+
+@media (pointer:coarse){
+  .sb-link, .btn, .chip-f, .icon-mini, .close-x{ min-height:38px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sb-backdrop" id="sbBackdrop"></div>
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="mark">SP</div>
+      <div class="txt"><b>Sri Pathra Pyro</b><small>ADMIN CONSOLE</small></div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-label">Overview</div>
+      <button class="sb-link active" data-page="dashboard"><span class="ic">📊</span> Dashboard</button>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-label">Operations</div>
+      <button class="sb-link" data-page="leads"><span class="ic">🧾</span> Lead Management <span class="sb-badge" id="sbLeadBadge">7</span></button>
+      <button class="sb-link" data-page="products"><span class="ic">🎆</span> Product Management</button>
+      <button class="sb-link" data-page="offers"><span class="ic">🏷️</span> Offer Management</button>
+      <button class="sb-link" data-page="sales"><span class="ic">💰</span> Sales Management</button>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-label">System</div>
+      <button class="sb-link" data-page="settings"><span class="ic">⚙️</span> Settings</button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <div class="topbar">
+      <div class="left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div>
+          <div class="page-title" id="pageTitle">Dashboard</div>
+          <div class="page-sub" id="pageSub">Overview of leads, sales &amp; inventory</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="search-mini"><input placeholder="Search anything…"></div>
+        <div class="admin-chip"><div class="av">SM</div><div><div class="nm">Selva Murugan</div><div class="rl">Store Admin</div></div></div>
+      </div>
+    </div>
+
+    <!-- ================= DASHBOARD ================= -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="card kpi">
+          <div class="ic">💰</div>
+          <div class="val">₹4,86,250</div>
+          <div class="lbl">Total Sales (This Season)</div>
+          <span class="delta up">▲ 18.2% vs last season</span>
+        </div>
+        <div class="card kpi">
+          <div class="ic">🧾</div>
+          <div class="val">312</div>
+          <div class="lbl">Total Orders</div>
+          <span class="delta up">▲ 12 today</span>
+        </div>
+        <div class="card kpi">
+          <div class="ic">🧲</div>
+          <div class="val">128</div>
+          <div class="lbl">Active Leads</div>
+          <span class="delta up">▲ 7 new this week</span>
+        </div>
+        <div class="card kpi">
+          <div class="ic">📦</div>
+          <div class="val">6</div>
+          <div class="lbl">Low Stock Items</div>
+          <span class="delta down">▼ needs restock</span>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card panel">
+          <div class="panel-head"><h3>Sales — Last 7 Days</h3><span class="link">View report →</span></div>
+          <div class="bar-chart" id="barChart"></div>
+        </div>
+        <div class="card panel">
+          <div class="panel-head"><h3>Orders by Category</h3></div>
+          <div class="donut-wrap">
+            <svg width="150" height="150" viewBox="0 0 42 42" style="transform:rotate(-90deg);">
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#241636" stroke-width="6"></circle>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#e8b94d" stroke-width="6" stroke-dasharray="30 70" stroke-dashoffset="0"></circle>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#ff8a2b" stroke-width="6" stroke-dasharray="22 78" stroke-dashoffset="-30"></circle>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#ff5a3c" stroke-width="6" stroke-dasharray="18 82" stroke-dashoffset="-52"></circle>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#5b9dff" stroke-width="6" stroke-dasharray="15 85" stroke-dashoffset="-70"></circle>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#5fbf6f" stroke-width="6" stroke-dasharray="15 85" stroke-dashoffset="-85"></circle>
+            </svg>
+            <div class="legend">
+              <div class="row"><span class="dot" style="background:#e8b94d;"></span> Sparklers — 30%</div>
+              <div class="row"><span class="dot" style="background:#ff8a2b;"></span> Gift Boxes — 22%</div>
+              <div class="row"><span class="dot" style="background:#ff5a3c;"></span> Rockets — 18%</div>
+              <div class="row"><span class="dot" style="background:#5b9dff;"></span> Combo Packs — 15%</div>
+              <div class="row"><span class="dot" style="background:#5fbf6f;"></span> Others — 15%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-grid" style="margin-top:20px; grid-template-columns:1fr 1fr;">
+        <div class="card panel">
+          <div class="panel-head"><h3>Recent Leads</h3><span class="link" onclick="goPage('leads')" style="cursor:pointer;">View all →</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Interest</th><th>Status</th></tr></thead>
+              <tbody id="dashLeadsTbl"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card panel">
+          <div class="panel-head"><h3>Recent Orders</h3><span class="link" onclick="goPage('sales')" style="cursor:pointer;">View all →</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Order</th><th>Customer</th><th>Amount</th></tr></thead>
+              <tbody id="dashSalesTbl"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= LEADS ================= -->
+    <div class="page" id="page-leads">
+      <div class="toolbar">
+        <div class="search-box2"><input placeholder="Search leads by name or phone…" id="leadSearch"></div>
+        <div class="filters" id="leadFilters"></div>
+        <button class="btn btn-primary" onclick="openModal('leadModal')">+ Add Lead</button>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr><th>Customer</th><th>Phone</th><th>Interested In</th><th>Source</th><th>Status</th><th>Last Contact</th><th>Actions</th></tr></thead>
+          <tbody id="leadsTbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= PRODUCTS ================= -->
+    <div class="page" id="page-products">
+      <div class="toolbar">
+        <div class="search-box2"><input placeholder="Search products…" id="productSearch"></div>
+        <div class="filters" id="productFilters"></div>
+        <button class="btn btn-primary" onclick="openModal('productModal')">+ Add Product</button>
+      </div>
+      <div class="pm-grid" id="productsGrid"></div>
+    </div>
+
+    <!-- ================= OFFERS ================= -->
+    <div class="page" id="page-offers">
+      <div class="toolbar">
+        <div><span class="page-sub">Manage Diwali discount tiers &amp; combo offers</span></div>
+        <button class="btn btn-primary" onclick="openModal('offerModal')">+ New Offer</button>
+      </div>
+      <div class="offer-grid" id="offersGrid"></div>
+    </div>
+
+    <!-- ================= SALES ================= -->
+    <div class="page" id="page-sales">
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:22px;">
+        <div class="card kpi"><div class="ic">🧾</div><div class="val">312</div><div class="lbl">Total Orders</div></div>
+        <div class="card kpi"><div class="ic">✅</div><div class="val">276</div><div class="lbl">Confirmed Orders</div></div>
+        <div class="card kpi"><div class="ic">⏳</div><div class="val">24</div><div class="lbl">Pending Confirmation</div></div>
+        <div class="card kpi"><div class="ic">💵</div><div class="val">₹1,559</div><div class="lbl">Avg. Order Value</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="search-box2"><input placeholder="Search order ID or customer…" id="saleSearch"></div>
+        <div class="filters" id="saleFilters"></div>
+        <button class="btn btn-outline">⬇ Export CSV</button>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Amount</th><th>Payment</th><th>Channel</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="salesTbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= SETTINGS ================= -->
+    <div class="page" id="page-settings">
+      <div class="card panel" style="max-width:640px;">
+        <h3 style="margin-bottom:18px;">Business Details</h3>
+        <div class="form-grid">
+          <div class="field"><label>Business Name</label><input value="Sri Pathra Pyro World"></div>
+          <div class="form-grid two">
+            <div class="field"><label>GSTIN</label><input value="33AFRFS8857B1ZJ"></div>
+            <div class="field"><label>Explosives License No.</label><input value="TN/VIR/EXP/0857/2025"></div>
+          </div>
+          <div class="field"><label>Address</label><textarea rows="2">3/178C, Kalayarkurichi, Purnachandrapuram, Virudhunagar, Tamil Nadu, 626130</textarea></div>
+          <div class="form-grid two">
+            <div class="field"><label>Phone</label><input value="+91 98432 11234"></div>
+            <div class="field"><label>WhatsApp Number</label><input value="+91 98432 11234"></div>
+          </div>
+        </div>
+        <div class="modal-actions"><button class="btn btn-primary">Save Changes</button></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-overlay" id="leadModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('leadModal')">✕</button>
+    <h3>Add New Lead</h3>
+    <div class="form-grid">
+      <div class="field"><label>Customer Name</label><input placeholder="e.g. Karthik Raja"></div>
+      <div class="form-grid two">
+        <div class="field"><label>Phone Number</label><input placeholder="+91"></div>
+        <div class="field"><label>Source</label><select><option>WhatsApp</option><option>Phone Call</option><option>Website Enquiry</option><option>Walk-in</option></select></div>
+      </div>
+      <div class="field"><label>Interested In</label><input placeholder="e.g. Family Combo Pack"></div>
+      <div class="field"><label>Status</label><select><option>New</option><option>Contacted</option><option>Converted</option><option>Lost</option></select></div>
+      <div class="field"><label>Notes</label><textarea rows="3" placeholder="Any remarks..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('leadModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('leadModal')">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('productModal')">✕</button>
+    <h3>Add / Edit Product</h3>
+    <div class="form-grid">
+      <div class="field"><label>Product Name</label><input placeholder="e.g. Premium Color Sparkler"></div>
+      <div class="form-grid two">
+        <div class="field"><label>Category</label><select><option>Sparklers</option><option>Flower Pots</option><option>Ground Chakkars</option><option>Rockets</option><option>Bombs</option><option>Fancy Items</option><option>Kids Crackers</option><option>Gift Boxes</option></select></div>
+        <div class="field"><label>Stock Qty</label><input type="number" placeholder="120"></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label>Original Price (₹)</label><input type="number" placeholder="250"></div>
+        <div class="field"><label>Sale Price (₹)</label><input type="number" placeholder="110"></div>
+      </div>
+      <div class="field"><label>Product Image URL</label><input placeholder="https://..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('productModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('productModal')">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="offerModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('offerModal')">✕</button>
+    <h3>Create Offer</h3>
+    <div class="form-grid">
+      <div class="field"><label>Offer Title</label><input placeholder="e.g. Early Bird Diwali Offer"></div>
+      <div class="form-grid two">
+        <div class="field"><label>Discount %</label><input type="number" placeholder="50"></div>
+        <div class="field"><label>Applies To</label><select><option>All Products</option><option>Sparklers</option><option>Combo Packs</option><option>Gift Boxes</option></select></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label>Start Date</label><input type="date"></div>
+        <div class="field"><label>End Date</label><input type="date"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('offerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('offerModal')">Publish Offer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ NAV ============ */
+function goPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.sb-link').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.sb-link[data-page="${p}"]`).classList.add('active');
+  const titles = {
+    dashboard:["Dashboard","Overview of leads, sales & inventory"],
+    leads:["Lead Management","Track and convert customer enquiries"],
+    products:["Product Management","Manage catalogue, stock & pricing"],
+    offers:["Offer Management","Create and monitor Diwali discount campaigns"],
+    sales:["Sales Management","All confirmed & pending orders"],
+    settings:["Settings","Business & account configuration"],
+  };
+  document.getElementById('pageTitle').textContent = titles[p][0];
+  document.getElementById('pageSub').textContent = titles[p][1];
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbBackdrop').classList.remove('show');
+}
+document.querySelectorAll('.sb-link').forEach(b=> b.addEventListener('click', ()=>goPage(b.dataset.page)) );
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sbBackdrop').classList.toggle('show');
+});
+document.getElementById('sbBackdrop').addEventListener('click', ()=>{
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbBackdrop').classList.remove('show');
+});
+
+/* ============ MODALS ============ */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('show'); });
+});
+
+/* ============ DATA ============ */
+const CAT_KEYWORDS = {
+  "Sparklers":"sparkler,firework","Flower Pots":"firework,fountain","Ground Chakkars":"firework,spinning",
+  "Rockets":"firework,rocket","Bombs":"firework,explosion","Fancy Items":"firework,colorful",
+  "Kids Crackers":"diwali,kids","Gift Boxes":"giftbox,diwali","Shot Series":"firework,display",
+  "Digital Crackers":"firework,neon","Matches":"matchstick,fire","Combo Packs":"diwali,fireworks"
+};
+function pimg(seed,cat){ const kw = CAT_KEYWORDS[cat]||"fireworks,diwali"; return `https://loremflickr.com/300/240/${kw}/all?lock=${seed}`; }
+
+const LEADS = [
+  {name:"Karthik Raja", phone:"+91 98421 03456", interest:"Family Combo Pack", source:"WhatsApp", status:"new", last:"Today, 10:20 AM"},
+  {name:"Divya Shree", phone:"+91 97865 22110", interest:"Gift Boxes (Bulk)", source:"Phone Call", status:"contacted", last:"Today, 9:05 AM"},
+  {name:"Muthu Kumar", phone:"+91 96294 88213", interest:"Sparklers 12-inch", source:"Website Enquiry", status:"converted", last:"Yesterday"},
+  {name:"Lakshmi Priya", phone:"+91 90475 66723", interest:"Kids Crackers Pack", source:"Walk-in", status:"converted", last:"Yesterday"},
+  {name:"Selvam R.", phone:"+91 89039 12456", interest:"Mega Combo Pack", source:"WhatsApp", status:"new", last:"2 days ago"},
+  {name:"Anitha M.", phone:"+91 91503 44890", interest:"Shot Series", source:"Phone Call", status:"lost", last:"3 days ago"},
+  {name:"Bala Subramaniam", phone:"+91 98765 30021", interest:"Digital Crackers", source:"Website Enquiry", status:"contacted", last:"3 days ago"},
+];
+
+const PRODUCTS_ADMIN = [
+  {name:"Deluxe Color Sparkler 10cm", cat:"Sparklers", orig:120, sale:65, stock:340, status:"instock"},
+  {name:"Premium Flower Pot Jumbo", cat:"Flower Pots", orig:280, sale:140, stock:85, status:"instock"},
+  {name:"Royal Ground Chakkar", cat:"Ground Chakkars", orig:150, sale:75, stock:12, status:"low"},
+  {name:"Whistling Sky Rocket", cat:"Rockets", orig:600, sale:299, stock:0, status:"out"},
+  {name:"Super Sound Bomb Pack", cat:"Bombs", orig:340, sale:180, stock:150, status:"instock"},
+  {name:"Fancy Peacock Fountain", cat:"Fancy Items", orig:450, sale:220, stock:40, status:"instock"},
+  {name:"Kids Snake Tablet Pack", cat:"Kids Crackers", orig:90, sale:45, stock:8, status:"low"},
+  {name:"Family Gift Box Special", cat:"Gift Boxes", orig:1800, sale:899, stock:60, status:"instock"},
+];
+
+const OFFERS = [
+  {title:"Early Bird Diwali Offer", pct:40, applies:"All Products", start:"01 Sep 2026", end:"15 Sep 2026", status:"expired", used:100},
+  {title:"Mega Combo Blast", pct:65, applies:"Combo Packs", start:"20 Sep 2026", end:"31 Oct 2026", status:"active", used:62},
+  {title:"Sparkler Season Sale", pct:55, applies:"Sparklers", start:"01 Oct 2026", end:"08 Nov 2026", status:"active", used:38},
+  {title:"Gift Box Bulk Offer", pct:50, applies:"Gift Boxes", start:"01 Oct 2026", end:"08 Nov 2026", status:"active", used:44},
+  {title:"Last Minute Flash Sale", pct:90, applies:"All Products", start:"05 Nov 2026", end:"08 Nov 2026", status:"paused", used:5},
+  {title:"Kids Special Discount", pct:45, applies:"Kids Crackers", start:"10 Oct 2026", end:"08 Nov 2026", status:"active", used:71},
+];
+
+const SALES = [
+  {id:"#SPW1042", cust:"Karthik Raja", items:8, amount:2450, pay:"paid", channel:"WhatsApp", date:"03 Aug 2026"},
+  {id:"#SPW1041", cust:"Divya Shree", items:14, amount:6120, pay:"pending", channel:"Phone Call", date:"03 Aug 2026"},
+  {id:"#SPW1040", cust:"Muthu Kumar", items:5, amount:1180, pay:"paid", channel:"Website", date:"02 Aug 2026"},
+  {id:"#SPW1039", cust:"Lakshmi Priya", items:20, amount:8990, pay:"paid", channel:"Walk-in", date:"02 Aug 2026"},
+  {id:"#SPW1038", cust:"Selvam R.", items:3, amount:899, pay:"pending", channel:"WhatsApp", date:"01 Aug 2026"},
+  {id:"#SPW1037", cust:"Bala Subramaniam", items:9, amount:3120, pay:"paid", channel:"Website", date:"01 Aug 2026"},
+];
+
+/* ============ RENDER: DASHBOARD ============ */
+function renderBarChart(){
+  const days = [["Mon",62],["Tue",78],["Wed",54],["Thu",91],["Fri",70],["Sat",120],["Sun",96]];
+  const max = Math.max(...days.map(d=>d[1]));
+  document.getElementById('barChart').innerHTML = days.map(([d,v])=>`
+    <div class="col">
+      <div class="bar" style="height:${(v/max*100)}%;" title="₹${v*100}"></div>
+      <div class="lbl">${d}</div>
+    </div>`).join('');
+}
+function renderDashTables(){
+  document.getElementById('dashLeadsTbl').innerHTML = LEADS.slice(0,4).map(l=>`
+    <tr><td>${l.name}<div class="cell-sub">${l.phone}</div></td><td>${l.interest}</td><td><span class="pill ${l.status}">${l.status}</span></td></tr>
+  `).join('');
+  document.getElementById('dashSalesTbl').innerHTML = SALES.slice(0,4).map(s=>`
+    <tr><td>${s.id}</td><td>${s.cust}</td><td>₹${s.amount}</td></tr>
+  `).join('');
+}
+
+/* ============ RENDER: LEADS ============ */
+let leadStatusFilter="all";
+function renderLeadFilters(){
+  const statuses=["all","new","contacted","converted","lost"];
+  document.getElementById('leadFilters').innerHTML = statuses.map(s=>
+    `<button class="chip-f ${s===leadStatusFilter?'active':''}" onclick="setLeadFilter('${s}')">${s[0].toUpperCase()+s.slice(1)}</button>`).join('');
+}
+function setLeadFilter(s){ leadStatusFilter=s; renderLeadFilters(); renderLeads(); }
+function renderLeads(){
+  const q = document.getElementById('leadSearch').value.toLowerCase();
+  let list = LEADS.filter(l=> (leadStatusFilter==='all'||l.status===leadStatusFilter) && (l.name.toLowerCase().includes(q)||l.phone.includes(q)) );
+  document.getElementById('leadsTbl').innerHTML = list.map(l=>`
+    <tr>
+      <td>${l.name}</td>
+      <td>${l.phone}</td>
+      <td>${l.interest}</td>
+      <td><span class="cell-sub">${l.source}</span></td>
+      <td><span class="pill ${l.status}">${l.status}</span></td>
+      <td><span class="cell-sub">${l.last}</span></td>
+      <td class="row-actions">
+        <a class="icon-mini" href="https://wa.me/91${l.phone.replace(/\\D/g,'').slice(-10)}" target="_blank" title="WhatsApp">💬</a>
+        <a class="icon-mini" href="tel:${l.phone.replace(/\\s/g,'')}" title="Call">📞</a>
+        <button class="icon-mini" title="Edit">✎</button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="7" style="text-align:center; color:var(--cream-dim);">No leads found</td></tr>`;
+  document.getElementById('sbLeadBadge').textContent = LEADS.filter(l=>l.status==='new').length;
+}
+document.getElementById('leadSearch').addEventListener('input', renderLeads);
+
+/* ============ RENDER: PRODUCTS ============ */
+let productCatFilter="all";
+function renderProductFilters(){
+  const cats=["all", ...new Set(PRODUCTS_ADMIN.map(p=>p.cat))];
+  document.getElementById('productFilters').innerHTML = cats.map(c=>
+    `<button class="chip-f ${c===productCatFilter?'active':''}" onclick="setProductFilter('${c}')">${c==='all'?'All':c}</button>`).join('');
+}
+function setProductFilter(c){ productCatFilter=c; renderProductFilters(); renderProducts(); }
+function renderProducts(){
+  const q = document.getElementById('productSearch').value.toLowerCase();
+  let list = PRODUCTS_ADMIN.filter(p=> (productCatFilter==='all'||p.cat===productCatFilter) && p.name.toLowerCase().includes(q));
+  document.getElementById('productsGrid').innerHTML = list.map((p,i)=>`
+    <div class="card pm-card">
+      <img src="${pimg('pm'+i+p.name.length, p.cat)}" alt="${p.name}">
+      <div class="body">
+        <div class="cat">${p.cat}</div>
+        <h4>${p.name}</h4>
+        <div class="prow"><span class="sale">₹${p.sale}</span><span class="old">₹${p.orig}</span></div>
+        <div class="footer-row">
+          <span class="pill ${p.status}">${p.status==='instock'?'In Stock':p.status==='low'?'Low Stock':'Out of Stock'} · ${p.stock}</span>
+        </div>
+        <div class="footer-row">
+          <button class="icon-mini" onclick="openModal('productModal')">✎ Edit</button>
+          <button class="icon-mini" title="Delete">🗑</button>
+        </div>
+      </div>
+    </div>`).join('') || `<p style="color:var(--cream-dim);">No products found.</p>`;
+}
+document.getElementById('productSearch').addEventListener('input', renderProducts);
+
+/* ============ RENDER: OFFERS ============ */
+function renderOffers(){
+  document.getElementById('offersGrid').innerHTML = OFFERS.map(o=>`
+    <div class="card offer-card">
+      <div class="top-row">
+        <div class="pct">${o.pct}%</div>
+        <span class="pill ${o.status}">${o.status}</span>
+      </div>
+      <h4>${o.title}</h4>
+      <p>Applies to: ${o.applies}</p>
+      <div class="progress"><div class="fill" style="width:${o.used}%;"></div></div>
+      <div class="meta"><span>${o.start} → ${o.end}</span><span>${o.used}% used</span></div>
+    </div>`).join('');
+}
+
+/* ============ RENDER: SALES ============ */
+let salePayFilter="all";
+function renderSaleFilters(){
+  const f=["all","paid","pending"];
+  document.getElementById('saleFilters').innerHTML = f.map(s=>
+    `<button class="chip-f ${s===salePayFilter?'active':''}" onclick="setSaleFilter('${s}')">${s[0].toUpperCase()+s.slice(1)}</button>`).join('');
+}
+function setSaleFilter(s){ salePayFilter=s; renderSaleFilters(); renderSales(); }
+function renderSales(){
+  const q = document.getElementById('saleSearch').value.toLowerCase();
+  let list = SALES.filter(s=> (salePayFilter==='all'||s.pay===salePayFilter) && (s.cust.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)) );
+  document.getElementById('salesTbl').innerHTML = list.map(s=>`
+    <tr>
+      <td>${s.id}</td>
+      <td>${s.cust}</td>
+      <td>${s.items} items</td>
+      <td>₹${s.amount}</td>
+      <td><span class="pill ${s.pay}">${s.pay}</span></td>
+      <td><span class="cell-sub">${s.channel}</span></td>
+      <td><span class="cell-sub">${s.date}</span></td>
+      <td class="row-actions"><button class="icon-mini" title="View">👁</button><button class="icon-mini" title="Invoice">🧾</button></td>
+    </tr>`).join('') || `<tr><td colspan="8" style="text-align:center; color:var(--cream-dim);">No orders found</td></tr>`;
+}
+document.getElementById('saleSearch').addEventListener('input', renderSales);
+
+/* ============ INIT ============ */
+renderBarChart();
+renderDashTables();
+renderLeadFilters(); renderLeads();
+renderProductFilters(); renderProducts();
+renderOffers();
+renderSaleFilters(); renderSales();
+</script>
+</body>
+</html>
