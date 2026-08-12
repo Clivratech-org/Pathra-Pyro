@@ -1,12 +1,10 @@
 const { PrismaClient } = require("@prisma/client") as { PrismaClient: new () => any };
 import bcrypt from "bcryptjs";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { DEFAULT_SETTINGS } from "../src/lib/settings";
 import { slugify } from "../src/lib/utils";
+import { saveBuffer } from "../src/lib/uploads";
 
 const prisma = new PrismaClient();
-const UPLOAD = path.join(process.cwd(), "uploads");
 
 const CATEGORIES = [
   { name: "Sparklers", emoji: "✨", desc: "Hand sparklers of every size, from 3-inch electric to 12-inch color sparklers.", hue: 45 },
@@ -157,10 +155,7 @@ function escapeXml(s: string) {
 }
 
 async function writeSvg(relDir: string, filename: string, svg: string) {
-  const dir = path.join(UPLOAD, relDir);
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, filename), svg, "utf8");
-  return `${relDir}/${filename}`;
+  return saveBuffer(Buffer.from(svg, "utf8"), relDir, filename, "image/svg+xml");
 }
 
 async function main() {

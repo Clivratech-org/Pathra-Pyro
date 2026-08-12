@@ -35,6 +35,11 @@ export function waLink(phone: string, text?: string) {
 export function mediaUrl(path?: string | null) {
   if (!path) return "/placeholder.svg";
   if (path.startsWith("http") || path.startsWith("/")) return path;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "uploads";
+  if (base) {
+    return `${base}/storage/v1/object/public/${bucket}/${path.replace(/^\/+/, "")}`;
+  }
   return `/api/uploads/${path.replace(/^\/+/, "")}`;
 }
 

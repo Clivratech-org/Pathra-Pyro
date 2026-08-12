@@ -10,3 +10,4 @@ prisma/dev.db-journal
 uploads
 .DS_Store
 Thumbs.db
+tsconfig.tsbuildinfo

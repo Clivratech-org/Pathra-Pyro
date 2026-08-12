@@ -1,10 +1,12 @@
-import { mkdir, writeFile, unlink } from "fs/promises";
-import path from "path";
-import { randomUUID } from "crypto";
+import { getSupabaseAdmin, storageConfigured } from "@/lib/storage";
 
-export const UPLOAD_ROOT = path.join(process.cwd(), "uploads");
+export const UPLOAD_ROOT = `${process.cwd()}/uploads`;
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
+
+export function useLocalStorage() {
+  return !storageConfigured();
+}
 
 export async function saveUpload(file: File, folder: string) {
   if (!ALLOWED.has(file.type)) {
@@ -14,28 +16,56 @@ export async function saveUpload(file: File, folder: string) {
     throw new Error("Image must be under 8 MB.");
   }
   const ext = extFromType(file.type);
-  const dir = path.join(UPLOAD_ROOT, folder);
-  await mkdir(dir, { recursive: true });
-  const filename = `${Date.now()}-${randomUUID().slice(0, 8)}.${ext}`;
+  const filename = `${Date.now()}-${randomId()}.${ext}`;
   const buf = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, filename), buf);
-  return `${folder}/${filename}`;
+  return saveBuffer(buf, folder, filename, file.type);
 }
 
-export async function saveBuffer(buf: Buffer, folder: string, filename: string) {
+export async function saveBuffer(
+  buf: Buffer,
+  folder: string,
+  filename: string,
+  contentType = "image/jpeg"
+) {
+  const rel = `${folder}/${filename}`;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
+    const { error } = await supabase.storage.from(bucket).upload(rel, buf, {
+      contentType,
+      upsert: false,
+    });
+    if (error) throw new Error(error.message);
+    return rel;
+  }
+
+  const { mkdir, writeFile } = await import("fs/promises");
+  const path = await import("path");
   const dir = path.join(UPLOAD_ROOT, folder);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), buf);
-  return `${folder}/${filename}`;
+  return rel;
 }
 
 export async function removeUpload(rel?: string | null) {
-  if (!rel) return;
+  if (!rel || rel.startsWith("http")) return;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
+    await supabase.storage.from(bucket).remove([rel.replace(/^\/+/, "")]).catch(() => {});
+    return;
+  }
+  const { unlink } = await import("fs/promises");
+  const path = await import("path");
   try {
     await unlink(path.join(UPLOAD_ROOT, rel));
   } catch {
     /* ignore missing files */
   }
+}
+
+function randomId() {
+  return Math.random().toString(36).slice(2, 10);
 }
 
 function extFromType(type: string) {
