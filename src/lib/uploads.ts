@@ -35,8 +35,16 @@ export async function saveBuffer(
       contentType,
       upsert: false,
     });
-    if (error) throw new Error(error.message);
-    return rel;
+    if (error) {
+      const bucketMissing =
+        error.message === "Bucket not found" || error.message.includes("Bucket not found");
+      if (!bucketMissing) throw new Error(error.message);
+      console.warn(
+        `Supabase bucket "${bucket}" not found — saving to local uploads/. Create a public "${bucket}" bucket in Supabase Storage, then re-run seed.`
+      );
+    } else {
+      return rel;
+    }
   }
 
   const { mkdir, writeFile } = await import("fs/promises");
