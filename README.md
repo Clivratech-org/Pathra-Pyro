@@ -2,14 +2,14 @@
 
 Public storefront + admin portal for the fireworks catalogue, Razorpay checkout, and delivery tracking.
 
-**Zero-server deployment:** Vercel + Neon Postgres + Supabase Storage (see [Deploy on Vercel](#deploy-on-vercel-zero-server-management)).
+**Recommended deployment (free + commercial use allowed):** [Netlify](https://netlify.com) + [Neon](https://neon.tech) Postgres + [Supabase](https://supabase.com) Storage.
 
 ## Local setup
 
 ```bash
 npm install
 cp .env.example .env
-# Set DATABASE_URL to Neon Postgres (free) or local Postgres
+# Set DATABASE_URL to Neon Postgres (free pooled URL)
 npx prisma db push
 npm run db:seed
 npm run dev
@@ -22,82 +22,109 @@ npm run dev
 
 Without Supabase env vars, images save to `./uploads/` locally. With Razorpay keys set to `placeholder`, checkout runs in **demo mode**.
 
-## Deploy on Vercel (zero server management)
+---
 
-### 1. Create free services
+## Deploy on Netlify (free, commercial OK)
 
-| Service | Sign up | Purpose |
-|---------|---------|---------|
-| [Neon](https://neon.tech) | Free | PostgreSQL database |
-| [Supabase](https://supabase.com) | Free | Image storage |
-| [Vercel](https://vercel.com) | Free | Host Next.js app |
-| [Cloudflare](https://cloudflare.com) | Free | DNS (optional) |
+> Netlify Free allows **commercial sites** (unlike Vercel Hobby). No credit card required.
 
-### 2. Neon database
+### Step 1 — Neon database (free)
 
-1. Create a project → copy the **pooled** connection string.
-2. Set as `DATABASE_URL` in Vercel env vars.
+1. Sign up at [neon.tech](https://neon.tech)
+2. Create a project → **Connection details** → copy the **pooled** connection string  
+   (host contains `-pooler`)
+3. Save as `DATABASE_URL`
 
-### 3. Supabase storage
+### Step 2 — Supabase storage (free)
 
-1. Create a project → **Storage** → New bucket named `uploads`.
-2. Make the bucket **public** (Policies → allow public read, or use Supabase dashboard “Public bucket”).
-3. Copy:
+1. Sign up at [supabase.com](https://supabase.com)
+2. Create a project → **Storage** → **New bucket** → name it `uploads`
+3. Make bucket **public** (toggle in bucket settings, or add a public read policy)
+4. From **Settings → API**, copy:
    - Project URL → `SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_URL`
-   - Service role key (Settings → API) → `SUPABASE_SERVICE_ROLE_KEY`
-   - Bucket name → `SUPABASE_STORAGE_BUCKET` and `NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET`
+   - `service_role` key → `SUPABASE_SERVICE_ROLE_KEY` (keep secret)
+   - Bucket name → `SUPABASE_STORAGE_BUCKET` and `NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET` (`uploads`)
 
-### 4. Vercel project
+### Step 3 — Netlify site (free)
 
-1. Import `Clivratech-org/Pathra-Pyro` from GitHub.
-2. Add all env vars from `.env.example` (production values).
-3. Deploy.
+1. Sign up at [netlify.com](https://netlify.com)
+2. **Add new site → Import from Git** → select `Clivratech-org/Pathra-Pyro`
+3. Build settings (auto-detected from `netlify.toml`):
+   - Build command: `npm run netlify-build`
+   - Publish directory: `.next`
+4. **Site configuration → Environment variables** — add all vars from `.env.example`:
 
-### 5. First-time database setup
+| Variable | Required | Example |
+|----------|----------|---------|
+| `DATABASE_URL` | Yes | Neon pooled Postgres URL |
+| `AUTH_SECRET` | Yes | Random 32+ char string |
+| `AUTH_URL` | Yes | `https://yourdomain.com` |
+| `NEXT_PUBLIC_SITE_URL` | Yes | `https://yourdomain.com` |
+| `SUPABASE_URL` | Yes | `https://xxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key |
+| `SUPABASE_STORAGE_BUCKET` | Yes | `uploads` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Same as SUPABASE_URL |
+| `NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET` | Yes | `uploads` |
+| `RAZORPAY_KEY_ID` | Yes | From Razorpay dashboard |
+| `RAZORPAY_KEY_SECRET` | Yes | From Razorpay dashboard |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Yes | Same as key ID |
+| `ADMIN_*` | Seed only | See `.env.example` |
 
-After the first deploy, run once from your machine (with production `DATABASE_URL` in `.env`):
+5. Click **Deploy site**
+
+### Step 4 — First-time database setup
+
+After Netlify deploy succeeds, run **once** on your machine with production env:
 
 ```bash
+# Pull Netlify env vars (optional)
+npx netlify-cli env:pull
+
 npx prisma db push
 npm run db:seed
 ```
 
-Or use Vercel CLI: `vercel env pull` then run the commands above.
+This creates tables, admin user, and ~66 demo products with images uploaded to Supabase.
 
-### 6. Domains
+### Step 5 — Custom domains
 
-In Vercel → Settings → Domains, add:
+In Netlify → **Domain management**, add:
 
 - `yourdomain.com`
-- `admin.yourdomain.com` (same project — middleware routes admin subdomain)
+- `admin.yourdomain.com` (same site — middleware rewrites admin subdomain to `/admin`)
 
-Set `AUTH_URL` and `NEXT_PUBLIC_SITE_URL` to `https://yourdomain.com`.
+Update DNS at your registrar (or Cloudflare):
 
-### Vercel environment variables
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | `@` or `www` | your-site.netlify.app |
+| CNAME | `admin` | your-site.netlify.app |
 
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `DATABASE_URL` | Yes | Neon pooled Postgres URL |
-| `AUTH_SECRET` | Yes | Random 32+ char string |
-| `AUTH_URL` | Yes | `https://yourdomain.com` |
-| `NEXT_PUBLIC_SITE_URL` | Yes | Same as AUTH_URL |
-| `SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server-side uploads |
-| `SUPABASE_STORAGE_BUCKET` | Yes | `uploads` |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Same as SUPABASE_URL |
-| `NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET` | Yes | `uploads` |
-| `RAZORPAY_*` | Yes | Live/test keys from Razorpay |
-| `ADMIN_*` | Seed only | First `db:seed` run |
+Set `AUTH_URL` and `NEXT_PUBLIC_SITE_URL` to `https://yourdomain.com`, then redeploy.
+
+---
+
+## Free tier limits (300 products — well within limits)
+
+| Service | Free limit | This site |
+|---------|------------|-----------|
+| Netlify | 100 GB bandwidth, 300 build min/mo | Fine for a regional shop |
+| Neon | 0.5 GB database | 300 products ≈ few MB |
+| Supabase | 1 GB storage | ~900–1500 product photos OK |
+
+**Only paid item for client:** domain name (~₹500–1000/year).
+
+---
 
 ## Features
 
 - Full public catalogue (shop, categories, product detail, combos, quick order)
-- Active campaign offers applied to live prices on shop and at checkout
+- Active campaign offers on live prices + server-side checkout validation
 - Cart (localStorage + DB sync for logged-in customers)
-- Guest or account checkout with Razorpay (server-side price validation)
-- Order tracking with shipment timeline and admin-uploaded photos
-- Admin portal: products (multi-image upload + reorder), combos, offers, leads, sales, settings
-- Cloud image storage (Supabase) — works on Vercel serverless
+- Guest or account checkout with Razorpay
+- Order tracking with admin-uploaded courier/packaging photos
+- Admin portal: products, combos, offers, leads, sales, settings
+- Cloud image storage via Supabase (works on Netlify serverless)
 
 ## Scripts
 
@@ -105,10 +132,10 @@ Set `AUTH_URL` and `NEXT_PUBLIC_SITE_URL` to `https://yourdomain.com`.
 |---------|-------------|
 | `npm run dev` | Development server |
 | `npm run build` | Prisma generate + production build |
-| `npm run vercel-build` | Same as build (used by Vercel) |
+| `npm run netlify-build` | Same as build (used by Netlify CI) |
 | `npm run start` | Start production server locally |
 | `npm run db:push` | Sync schema to database |
-| `npm run db:seed` | Seed demo data + upload placeholder images |
+| `npm run db:seed` | Seed demo data + upload images to Supabase |
 | `npm run db:reset` | Reset DB + reseed |
 
 ## Prototypes

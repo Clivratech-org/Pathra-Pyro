@@ -1,0 +1,17 @@
+# Netlify — commercial use allowed on the free plan
+# Docs: https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/overview/
+
+[build]
+  command = "npm run netlify-build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Next.js Runtime (OpenNext) — auto-installed when detected; explicit for clarity
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Prisma client must be bundled into serverless functions
+[functions]
+  included_files = ["node_modules/.prisma/**", "node_modules/@prisma/client/**"]
