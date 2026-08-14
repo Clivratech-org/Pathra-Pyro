@@ -6,7 +6,7 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
 # Next.js Runtime (OpenNext) — auto-installed when detected; explicit for clarity
 [[plugins]]

@@ -11,5 +11,5 @@ export default async function QuickOrderPage() {
       select: { name: true },
     }),
   ]);
-  return <QuickOrderTable products={products.map(toPricedCard)} categories={cats} />;
+  return <QuickOrderTable products={products.map(toPricedCard)} categories={cats.map((c) => c.name)} />;
 }
