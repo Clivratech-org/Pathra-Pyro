@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState, useTransition } from "react";
+import { FormEvent, useState, useTransition } from "react";
 import {
   saveProduct,
   deleteProductImage,
@@ -13,6 +13,8 @@ import { InlineSpinner } from "@/components/page-loader";
 import { discountPct, formatInr, mediaUrl } from "@/lib/utils";
 
 type Img = { id: string; path: string; isCover: boolean };
+
+type PendingImage = { id: string; file: File; preview: string };
 
 export function ProductEditor({
   product,
@@ -46,7 +48,7 @@ export function ProductEditor({
   const [desc, setDesc] = useState(product?.description || "");
   const [featured, setFeatured] = useState(product?.featured || false);
   const [images, setImages] = useState<Img[]>(product?.images || []);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [over, setOver] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -56,13 +58,24 @@ export function ProductEditor({
   const catName = categories.find((c) => c.id === catId)?.name || "Category";
   const disc = discountPct(mrp, sale);
   const cover = images.find((i) => i.isCover) || images[0];
-  const liveImg = previews[0] || (cover ? mediaUrl(cover.path) : "");
-  const filesPreview = useMemo(() => previews, [previews]);
+  const liveImg = pendingImages[0]?.preview || (cover ? mediaUrl(cover.path) : "");
 
-  function onFiles(files: FileList | null) {
-    if (!files) return;
-    const urls = Array.from(files).map((f) => URL.createObjectURL(f));
-    setPreviews((p) => [...p, ...urls]);
+  function addFiles(files: FileList | null) {
+    if (!files?.length) return;
+    const next: PendingImage[] = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 7)}`,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setPendingImages((prev) => [...prev, ...next]);
+  }
+
+  function removePending(id: string) {
+    setPendingImages((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target) URL.revokeObjectURL(target.preview);
+      return prev.filter((p) => p.id !== id);
+    });
   }
 
   function moveImage(index: number, dir: -1 | 1) {
@@ -91,13 +104,22 @@ export function ProductEditor({
       return;
     }
     const fd = new FormData(e.currentTarget);
+    fd.delete("images");
+    for (const item of pendingImages) {
+      fd.append("images", item.file);
+    }
     startSave(async () => {
       const res = await saveProduct(fd);
       if (!res.ok) {
         setError(res.error);
         return;
       }
-      setOk(res.message || "Product saved.");
+      setOk(
+        pendingImages.length > 1
+          ? `Product saved with ${pendingImages.length} new images.`
+          : res.message || "Product saved."
+      );
+      setPendingImages([]);
       router.push(`/admin/products/${res.id}`);
       router.refresh();
     });
@@ -173,7 +195,7 @@ export function ProductEditor({
               Featured on home
             </label>
             <div className="field">
-              <label>Product images</label>
+              <label>Product images ({images.length + pendingImages.length} total)</label>
               <div
                 className={`dropzone${over ? " over" : ""}`}
                 onDragOver={(e) => {
@@ -184,24 +206,25 @@ export function ProductEditor({
                 onDrop={(e) => {
                   e.preventDefault();
                   setOver(false);
-                  onFiles(e.dataTransfer.files);
-                  const input = e.currentTarget.querySelector("input");
-                  if (input) {
-                    const dt = new DataTransfer();
-                    Array.from(e.dataTransfer.files).forEach((f) => dt.items.add(f));
-                    (input as HTMLInputElement).files = dt.files;
-                  }
+                  addFiles(e.dataTransfer.files);
                 }}
               >
-                Drag & drop images here, or click to browse
+                Drag & drop images here, or browse to add more
                 <input
                   type="file"
-                  name="images"
                   accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
                   multiple
                   style={{ marginTop: 10 }}
-                  onChange={(e) => onFiles(e.target.files)}
+                  onChange={(e) => {
+                    addFiles(e.target.files);
+                    e.target.value = "";
+                  }}
                 />
+                {pendingImages.length > 0 && (
+                  <p className="cell-sub" style={{ marginTop: 8 }}>
+                    {pendingImages.length} new image{pendingImages.length === 1 ? "" : "s"} ready to upload
+                  </p>
+                )}
               </div>
               <div className="img-chips">
                 {images.map((img, idx) => (
@@ -266,10 +289,20 @@ export function ProductEditor({
                     </div>
                   </div>
                 ))}
-                {filesPreview.map((src) => (
-                  <div className="img-chip" key={src}>
-                    <img src={src} alt="" />
+                {pendingImages.map((item) => (
+                  <div className="img-chip" key={item.id}>
+                    <img src={item.preview} alt="" />
                     <span className="cover">New</span>
+                    <div className="img-chip-actions">
+                      <button
+                        type="button"
+                        className="icon-mini"
+                        onClick={() => removePending(item.id)}
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -310,6 +343,23 @@ export function ProductEditor({
               </div>
             </div>
           </div>
+          {(images.length > 0 || pendingImages.length > 0) && (
+            <div className="card static" style={{ marginTop: 18, padding: 16 }}>
+              <div className="eyebrow">Gallery ({images.length + pendingImages.length})</div>
+              <div className="pdp-thumbs">
+                {images.map((img) => (
+                  <button type="button" key={img.id}>
+                    <img src={mediaUrl(img.path)} alt="" />
+                  </button>
+                ))}
+                {pendingImages.map((item) => (
+                  <button type="button" key={item.id}>
+                    <img src={item.preview} alt="" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </form>
     </>

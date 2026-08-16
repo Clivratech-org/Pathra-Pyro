@@ -69,7 +69,7 @@ export function ProductDetail({
             </div>
             <div className="pdp-thumbs">
               {product.images.map((img, i) => (
-                <button key={img.path} className={i === idx ? "active" : ""} onClick={() => setIdx(i)}>
+                <button key={`${img.path}-${i}`} type="button" className={i === idx ? "active" : ""} onClick={() => setIdx(i)}>
                   <img src={mediaUrl(img.path)} alt={img.alt} />
                 </button>
               ))}

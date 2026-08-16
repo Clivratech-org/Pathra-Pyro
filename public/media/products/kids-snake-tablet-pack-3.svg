@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="680" viewBox="0 0 800 680">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="hsl(278, 70%, 28%)"/>
+      <stop offset="55%" stop-color="hsl(318, 80%, 42%)"/>
+      <stop offset="100%" stop-color="hsl(358, 75%, 52%)"/>
+    </linearGradient>
+    <radialGradient id="r" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,220,140,0.45)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="680" fill="url(#g)"/>
+  <rect width="800" height="680" fill="url(#r)"/>
+  <circle cx="140" cy="120" r="8" fill="#e8b94d" opacity="0.8"/>
+  <circle cx="660" cy="90" r="5" fill="#ff8a2b" opacity="0.9"/>
+  <circle cx="720" cy="240" r="6" fill="#ff5a3c" opacity="0.7"/>
+  <circle cx="80" cy="500" r="7" fill="#f4d78a" opacity="0.7"/>
+  <text x="400" y="300" text-anchor="middle" font-size="92">🧒</text>
+  <text x="400" y="390" text-anchor="middle" fill="#faf1e0" font-family="Georgia, serif" font-size="28" font-weight="700">Detail view</text>
+  <text x="400" y="430" text-anchor="middle" fill="#e8b94d" font-family="monospace" font-size="14" letter-spacing="3">SRI PATHRA PYRO WORLD</text>
+</svg>

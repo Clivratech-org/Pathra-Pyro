@@ -34,8 +34,10 @@ export function waLink(phone: string, text?: string) {
 
 export function mediaUrl(path?: string | null) {
   if (!path) return "/placeholder.svg";
-  if (path.startsWith("http") || path.startsWith("/")) return path;
+  if (path.startsWith("http") || path.startsWith("data:") || path.startsWith("/")) return path;
   const clean = path.replace(/^\/+/, "");
+  // Seed SVGs are shipped in /public/media (reliable on Netlify)
+  if (clean.endsWith(".svg")) return `/media/${clean}`;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const bucket =
     process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ||
@@ -44,7 +46,7 @@ export function mediaUrl(path?: string | null) {
   if (base) {
     return `${base.replace(/\/$/, "")}/storage/v1/object/public/${bucket}/${clean}`;
   }
-  return `/api/uploads/${clean}`;
+  return `/media/${clean}`;
 }
 
 export function nextOrderNumber(last?: string | null) {

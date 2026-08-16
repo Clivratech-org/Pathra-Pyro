@@ -30,8 +30,8 @@ export default async function HomePage() {
       <section className="hero" style={{ paddingBottom: 60 }}>
         <SparkCanvas />
         <div className="hero-bg-imgs">
-          <img className="i1" src={mediaUrl(categories[3]?.coverPath)} alt="fireworks display" />
-          <img className="i2" src={mediaUrl(categories[0]?.coverPath)} alt="diwali sparkler" />
+          <img className="i1" src="/images/hero-1.svg" alt="fireworks display" />
+          <img className="i2" src="/images/hero-2.svg" alt="diwali sparkler" />
         </div>
         <span className="float-deco" style={{ top: "18%", left: "6%" }}>🎇</span>
         <span className="float-deco" style={{ top: "65%", left: "14%", animationDelay: "1.4s" }}>🪔</span>
@@ -79,8 +79,8 @@ export default async function HomePage() {
       <section>
         <div className="wrap about-grid">
           <div className="about-imgs">
-            <img className="a1" src={mediaUrl(categories[5]?.coverPath)} alt="fireworks factory" />
-            <img className="a2" src={mediaUrl(categories[1]?.coverPath)} alt="colourful fireworks" />
+            <img className="a1" src="/images/about-1.svg" alt="fireworks factory" />
+            <img className="a2" src="/images/about-2.svg" alt="colourful fireworks" />
           </div>
           <div className="about-copy">
             <div className="eyebrow">Welcome to {settings.businessName}</div>

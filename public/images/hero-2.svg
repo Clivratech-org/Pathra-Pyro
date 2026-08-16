@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="900" viewBox="0 0 700 900">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8b94d"/>
+      <stop offset="55%" stop-color="#160b26"/>
+      <stop offset="100%" stop-color="#0d0716"/>
+    </linearGradient>
+  </defs>
+  <rect width="700" height="900" rx="36" fill="url(#g)"/>
+  <text x="350" y="420" text-anchor="middle" font-size="110">(</text>
+  <text x="350" y="520" text-anchor="middle" fill="#faf1e0" font-family="Georgia, serif" font-size="34" font-weight="700">Sparklers</text>
+  <text x="350" y="570" text-anchor="middle" fill="#f4d78a" font-family="monospace" font-size="15" letter-spacing="3">HANDHELD FUN</text>
+</svg>

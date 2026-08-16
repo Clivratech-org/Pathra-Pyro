@@ -1,12 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
-import { mediaUrl } from "@/lib/utils";
 
 export default async function AboutPage() {
-  const [settings, cats] = await Promise.all([
-    getSettings(),
-    prisma.category.findMany({ orderBy: { sortOrder: "asc" }, take: 4 }),
-  ]);
+  const settings = await getSettings();
   return (
     <>
       <div className="page-hero">
@@ -20,8 +15,8 @@ export default async function AboutPage() {
       <section>
         <div className="wrap about-grid">
           <div className="about-imgs">
-            <img className="a1" src={mediaUrl(cats[0]?.coverPath)} alt="crackers shop" />
-            <img className="a2" src={mediaUrl(cats[1]?.coverPath)} alt="sky fireworks" />
+            <img className="a1" src="/images/about-1.svg" alt="crackers shop" />
+            <img className="a2" src="/images/about-2.svg" alt="sky fireworks" />
           </div>
           <div className="about-copy">
             <div className="eyebrow">Company History</div>

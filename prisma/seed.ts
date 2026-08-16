@@ -155,7 +155,18 @@ function escapeXml(s: string) {
 }
 
 async function writeSvg(relDir: string, filename: string, svg: string) {
-  return saveBuffer(Buffer.from(svg, "utf8"), relDir, filename, "image/svg+xml");
+  const { mkdir, writeFile } = await import("fs/promises");
+  const path = await import("path");
+  const dir = path.join(process.cwd(), "public", "media", relDir);
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, filename), svg, "utf8");
+  // Best-effort CDN mirror (ignored if bucket missing)
+  try {
+    await saveBuffer(Buffer.from(svg, "utf8"), relDir, filename, "image/svg+xml");
+  } catch {
+    /* local /public/media is the source of truth for seed art */
+  }
+  return `/media/${relDir}/${filename}`;
 }
 
 async function main() {
