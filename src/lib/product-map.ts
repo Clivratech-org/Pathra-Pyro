@@ -6,6 +6,7 @@ export type ProductWithRelations = {
   slug: string;
   mrp: number;
   salePrice: number;
+  categoryId: string;
   images: { isCover: boolean; path: string }[];
   category: { name: string };
 };

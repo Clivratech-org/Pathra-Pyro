@@ -4,7 +4,14 @@ import { getSettings } from "@/lib/settings";
 export default async function SettingsPage() {
   const s = await getSettings();
   return (
-    <form className="card panel static" style={{ maxWidth: 640 }} action={saveBusinessSettings}>
+    <form
+      className="card panel static"
+      style={{ maxWidth: 640 }}
+      action={async (fd) => {
+        "use server";
+        await saveBusinessSettings(fd);
+      }}
+    >
       <h3 style={{ marginBottom: 18 }}>Business Details</h3>
       <div className="form-row">
         <div className="field"><label>Business Name</label><input name="businessName" defaultValue={s.businessName} /></div>

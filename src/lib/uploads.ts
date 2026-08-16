@@ -8,17 +8,45 @@ export function useLocalStorage() {
   return !storageConfigured();
 }
 
+function sniffType(file: File): string {
+  if (file.type && ALLOWED.has(file.type)) return file.type;
+  const name = (file.name || "").toLowerCase();
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".webp")) return "image/webp";
+  if (name.endsWith(".gif")) return "image/gif";
+  if (name.endsWith(".svg")) return "image/svg+xml";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  return file.type || "";
+}
+
 export async function saveUpload(file: File, folder: string) {
-  if (!ALLOWED.has(file.type)) {
+  const contentType = sniffType(file);
+  if (!ALLOWED.has(contentType)) {
     throw new Error("Only JPG, PNG, WEBP, GIF or SVG images are allowed.");
   }
   if (file.size > 8 * 1024 * 1024) {
     throw new Error("Image must be under 8 MB.");
   }
-  const ext = extFromType(file.type);
+  const ext = extFromType(contentType);
   const filename = `${Date.now()}-${randomId()}.${ext}`;
   const buf = Buffer.from(await file.arrayBuffer());
-  return saveBuffer(buf, folder, filename, file.type);
+  return saveBuffer(buf, folder, filename, contentType);
+}
+
+async function ensurePublicBucket(bucket: string) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return false;
+  const { data } = await supabase.storage.getBucket(bucket);
+  if (data) return true;
+  const { error } = await supabase.storage.createBucket(bucket, {
+    public: true,
+    fileSizeLimit: 8 * 1024 * 1024,
+  });
+  if (error && !/already exists/i.test(error.message)) {
+    console.warn("Could not create storage bucket:", error.message);
+    return false;
+  }
+  return true;
 }
 
 export async function saveBuffer(
@@ -30,21 +58,22 @@ export async function saveBuffer(
   const rel = `${folder}/${filename}`;
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
-    const { error } = await supabase.storage.from(bucket).upload(rel, buf, {
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
+    let { error } = await supabase.storage.from(bucket).upload(rel, buf, {
       contentType,
-      upsert: false,
+      upsert: true,
     });
-    if (error) {
-      const bucketMissing =
-        error.message === "Bucket not found" || error.message.includes("Bucket not found");
-      if (!bucketMissing) throw new Error(error.message);
-      console.warn(
-        `Supabase bucket "${bucket}" not found — saving to local uploads/. Create a public "${bucket}" bucket in Supabase Storage, then re-run seed.`
-      );
-    } else {
-      return rel;
+    if (error && /bucket not found/i.test(error.message)) {
+      const ok = await ensurePublicBucket(bucket);
+      if (ok) {
+        ({ error } = await supabase.storage.from(bucket).upload(rel, buf, {
+          contentType,
+          upsert: true,
+        }));
+      }
     }
+    if (error) throw new Error(`Image upload failed: ${error.message}`);
+    return rel;
   }
 
   const { mkdir, writeFile } = await import("fs/promises");
@@ -59,7 +88,7 @@ export async function removeUpload(rel?: string | null) {
   if (!rel || rel.startsWith("http")) return;
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
     await supabase.storage.from(bucket).remove([rel.replace(/^\/+/, "")]).catch(() => {});
     return;
   }

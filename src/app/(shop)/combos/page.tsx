@@ -1,5 +1,6 @@
 import { ComboCard } from "@/components/combo-card";
 import { fetchPricedCombos } from "@/lib/catalog";
+import { comboItemsAsLabels } from "@/lib/combo-items";
 
 export default async function CombosPage() {
   const combos = await fetchPricedCombos();
@@ -23,7 +24,7 @@ export default async function CombosPage() {
                 slug: c.slug,
                 tier: c.tier,
                 name: c.name,
-                items: JSON.parse(c.itemsJson) as string[],
+                items: comboItemsAsLabels(c.itemsJson),
                 mrp: c.mrp,
                 sale: c.effectiveSale,
                 img: c.imagePath,

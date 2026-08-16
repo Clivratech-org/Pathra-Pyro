@@ -6,6 +6,7 @@ import { SparkCanvas } from "@/components/spark-canvas";
 import { fetchPricedCombos, fetchPricedProducts, toPricedCard } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
+import { comboItemsAsLabels } from "@/lib/combo-items";
 import { mediaUrl, waLink } from "@/lib/utils";
 
 export default async function HomePage() {
@@ -130,7 +131,7 @@ export default async function HomePage() {
                   slug: c.slug,
                   tier: c.tier,
                   name: c.name,
-                  items: JSON.parse(c.itemsJson) as string[],
+                  items: comboItemsAsLabels(c.itemsJson),
                   mrp: c.mrp,
                   sale: c.effectiveSale,
                   img: c.imagePath,

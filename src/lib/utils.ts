@@ -35,12 +35,16 @@ export function waLink(phone: string, text?: string) {
 export function mediaUrl(path?: string | null) {
   if (!path) return "/placeholder.svg";
   if (path.startsWith("http") || path.startsWith("/")) return path;
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "uploads";
+  const clean = path.replace(/^\/+/, "");
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const bucket =
+    process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ||
+    process.env.SUPABASE_STORAGE_BUCKET ||
+    "uploads";
   if (base) {
-    return `${base}/storage/v1/object/public/${bucket}/${path.replace(/^\/+/, "")}`;
+    return `${base.replace(/\/$/, "")}/storage/v1/object/public/${bucket}/${clean}`;
   }
-  return `/api/uploads/${path.replace(/^\/+/, "")}`;
+  return `/api/uploads/${clean}`;
 }
 
 export function nextOrderNumber(last?: string | null) {

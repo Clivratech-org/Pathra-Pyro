@@ -57,7 +57,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
       </div>
-      <form className="card form-card static" action={updateShipment}>
+      <form
+        className="card form-card static"
+        action={async (fd) => {
+          "use server";
+          await updateShipment(fd);
+        }}
+      >
         <h3>Update delivery</h3>
         <input type="hidden" name="orderId" value={order.id} />
         <p className="cell-sub" style={{ margin: "8px 0 14px" }}>Current: {status.replace("_", " ")}</p>

@@ -2,7 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { getActiveOffers, priceCombo, priceProduct } from "@/lib/offers";
 import { coverPath, type ProductWithRelations } from "@/lib/product-map";
 
-const productInclude = {
+const productListInclude = {
+  images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+  category: true,
+};
+
+const productDetailInclude = {
   images: { orderBy: { sortOrder: "asc" as const } },
   category: true,
 };
@@ -11,7 +16,7 @@ export async function fetchPricedProducts(extraWhere: Record<string, unknown> = 
   const [products, offers] = await Promise.all([
     prisma.product.findMany({
       where: { active: true, ...extraWhere },
-      include: productInclude,
+      include: productListInclude,
       orderBy: { popularity: "desc" },
     }),
     getActiveOffers(),
@@ -21,7 +26,7 @@ export async function fetchPricedProducts(extraWhere: Record<string, unknown> = 
 
 export async function fetchPricedProductBySlug(slug: string) {
   const [product, offers] = await Promise.all([
-    prisma.product.findUnique({ where: { slug }, include: productInclude }),
+    prisma.product.findUnique({ where: { slug }, include: productDetailInclude }),
     getActiveOffers(),
   ]);
   if (!product || !product.active) return null;

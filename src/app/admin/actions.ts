@@ -1,250 +1,479 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { serializeComboItems, type ComboItemsData } from "@/lib/combo-items";
 import { prisma } from "@/lib/prisma";
 import { saveSettings, type SiteSettings } from "@/lib/settings";
-import { saveUpload } from "@/lib/uploads";
+import { removeUpload, saveUpload } from "@/lib/uploads";
 import { slugify } from "@/lib/utils";
 
 type LeadStatus = "new" | "contacted" | "converted" | "lost";
 type OfferApplies = "ALL" | "CATEGORY" | "COMBOS";
 type OfferStatus = "active" | "paused" | "expired";
-type ShipmentStatus = "placed" | "confirmed" | "packed" | "dispatched" | "in_transit" | "delivered" | "cancelled";
+type ShipmentStatus =
+  | "placed"
+  | "confirmed"
+  | "packed"
+  | "dispatched"
+  | "in_transit"
+  | "delivered"
+  | "cancelled";
+
+export type ActionResult = { ok: true; id?: string; message?: string } | { ok: false; error: string };
 
 async function requireAdmin() {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Unauthorized");
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
   return session;
 }
 
-export async function saveLead(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id") || "");
-  const data = {
-    name: String(formData.get("name") || "").trim(),
-    phone: String(formData.get("phone") || "").trim(),
-    interest: String(formData.get("interest") || "").trim(),
-    source: String(formData.get("source") || "Website Enquiry"),
-    status: String(formData.get("status") || "new") as LeadStatus,
-    notes: String(formData.get("notes") || ""),
-    lastContact: new Date(),
-  };
-  if (id) await prisma.lead.update({ where: { id }, data });
-  else await prisma.lead.create({ data });
-  revalidatePath("/admin/leads");
-  revalidatePath("/admin");
+function fail(error: unknown, fallback: string): ActionResult {
+  const msg = error instanceof Error ? error.message : fallback;
+  console.error(fallback, error);
+  return { ok: false, error: msg || fallback };
 }
 
-export async function deleteLead(id: string) {
-  await requireAdmin();
-  await prisma.lead.delete({ where: { id } });
-  revalidatePath("/admin/leads");
+export async function saveLead(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const id = String(formData.get("id") || "");
+    const name = String(formData.get("name") || "").trim();
+    const phone = String(formData.get("phone") || "").trim();
+    if (!name || !phone) return { ok: false, error: "Name and phone are required." };
+    const data = {
+      name,
+      phone,
+      interest: String(formData.get("interest") || "").trim(),
+      source: String(formData.get("source") || "Website Enquiry"),
+      status: String(formData.get("status") || "new") as LeadStatus,
+      notes: String(formData.get("notes") || ""),
+      lastContact: new Date(),
+    };
+    if (id) await prisma.lead.update({ where: { id }, data });
+    else await prisma.lead.create({ data });
+    revalidatePath("/admin/leads");
+    revalidatePath("/admin");
+    revalidateTag("leads");
+    return { ok: true, message: id ? "Lead updated." : "Lead created." };
+  } catch (e) {
+    return fail(e, "Could not save lead.");
+  }
 }
 
-export async function saveOffer(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id") || "");
-  const appliesTo = String(formData.get("appliesTo") || "ALL") as OfferApplies;
-  const data = {
-    title: String(formData.get("title") || "").trim(),
-    pct: Number(formData.get("pct") || 0),
-    appliesTo,
-    categoryId: appliesTo === "CATEGORY" ? String(formData.get("categoryId") || "") || null : null,
-    startDate: new Date(String(formData.get("startDate"))),
-    endDate: new Date(String(formData.get("endDate"))),
-    status: String(formData.get("status") || "active") as OfferStatus,
-  };
-  if (id) await prisma.offer.update({ where: { id }, data });
-  else await prisma.offer.create({ data });
-  revalidatePath("/admin/offers");
-  revalidatePath("/");
-  revalidatePath("/shop");
-  revalidatePath("/combos");
+export async function deleteLead(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    await prisma.lead.delete({ where: { id } });
+    revalidatePath("/admin/leads");
+    revalidatePath("/admin");
+    revalidateTag("leads");
+    return { ok: true, message: "Lead deleted." };
+  } catch (e) {
+    return fail(e, "Could not delete lead.");
+  }
 }
 
-export async function deleteOffer(id: string) {
-  await requireAdmin();
-  await prisma.offer.delete({ where: { id } });
-  revalidatePath("/admin/offers");
-  revalidatePath("/");
-  revalidatePath("/shop");
-  revalidatePath("/combos");
+export async function saveOffer(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const id = String(formData.get("id") || "");
+    const appliesTo = String(formData.get("appliesTo") || "ALL") as OfferApplies;
+    const data = {
+      title: String(formData.get("title") || "").trim(),
+      pct: Number(formData.get("pct") || 0),
+      appliesTo,
+      categoryId: appliesTo === "CATEGORY" ? String(formData.get("categoryId") || "") || null : null,
+      startDate: new Date(String(formData.get("startDate"))),
+      endDate: new Date(String(formData.get("endDate"))),
+      status: String(formData.get("status") || "active") as OfferStatus,
+    };
+    if (!data.title) return { ok: false, error: "Offer title is required." };
+    if (id) await prisma.offer.update({ where: { id }, data });
+    else await prisma.offer.create({ data });
+    revalidatePath("/admin/offers");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/combos");
+    return { ok: true, message: "Offer saved." };
+  } catch (e) {
+    return fail(e, "Could not save offer.");
+  }
 }
 
-export async function saveBusinessSettings(formData: FormData) {
-  await requireAdmin();
-  const data: SiteSettings = {
-    businessName: String(formData.get("businessName") || ""),
-    tagline: String(formData.get("tagline") || ""),
-    gstin: String(formData.get("gstin") || ""),
-    license: String(formData.get("license") || ""),
-    address: String(formData.get("address") || ""),
-    cityLine: String(formData.get("cityLine") || ""),
-    phone: String(formData.get("phone") || ""),
-    phone2: String(formData.get("phone2") || ""),
-    whatsapp: String(formData.get("whatsapp") || ""),
-    email: String(formData.get("email") || ""),
-    hours: String(formData.get("hours") || ""),
-    mapEmbed: String(formData.get("mapEmbed") || ""),
-    marquee: String(formData.get("marquee") || ""),
-  };
-  await saveSettings(data);
+export async function deleteOffer(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    await prisma.offer.delete({ where: { id } });
+    revalidatePath("/admin/offers");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/combos");
+    return { ok: true, message: "Offer deleted." };
+  } catch (e) {
+    return fail(e, "Could not delete offer.");
+  }
+}
+
+export async function saveBusinessSettings(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const data: SiteSettings = {
+      businessName: String(formData.get("businessName") || ""),
+      tagline: String(formData.get("tagline") || ""),
+      gstin: String(formData.get("gstin") || ""),
+      license: String(formData.get("license") || ""),
+      address: String(formData.get("address") || ""),
+      cityLine: String(formData.get("cityLine") || ""),
+      phone: String(formData.get("phone") || ""),
+      phone2: String(formData.get("phone2") || ""),
+      whatsapp: String(formData.get("whatsapp") || ""),
+      email: String(formData.get("email") || ""),
+      hours: String(formData.get("hours") || ""),
+      mapEmbed: String(formData.get("mapEmbed") || ""),
+      marquee: String(formData.get("marquee") || ""),
+    };
+    await saveSettings(data);
   revalidatePath("/admin/settings");
   revalidatePath("/");
+  revalidateTag("site-settings");
+  return { ok: true, message: "Settings saved." };
+  } catch (e) {
+    return fail(e, "Could not save settings.");
+  }
 }
 
-export async function saveProduct(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id") || "");
-  const name = String(formData.get("name") || "").trim();
-  const payload = {
-    name,
-    slug: slugify(name) + (id ? "" : `-${Date.now().toString().slice(-4)}`),
-    description: String(formData.get("description") || ""),
-    categoryId: String(formData.get("categoryId") || ""),
-    mrp: Number(formData.get("mrp") || 0),
-    salePrice: Number(formData.get("salePrice") || 0),
-    stock: Number(formData.get("stock") || 0),
-    featured: formData.get("featured") === "on",
-    active: formData.get("active") !== "off",
-    popularity: Number(formData.get("popularity") || 0.5),
-  };
-  let productId = id;
-  if (id) {
-    const existing = await prisma.product.findUnique({ where: { id } });
-    await prisma.product.update({
-      where: { id },
-      data: { ...payload, slug: existing?.slug || payload.slug },
-    });
-  } else {
-    const created = await prisma.product.create({ data: payload });
-    productId = created.id;
-  }
-
-  const files = formData.getAll("images") as File[];
-  const existingImages = await prisma.productImage.count({ where: { productId } });
-  let sort = existingImages;
-  for (const file of files) {
-    if (!file || typeof file === "string" || !file.size) continue;
-    const path = await saveUpload(file, "products");
-    await prisma.productImage.create({
+export async function saveCategory(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const id = String(formData.get("id") || "");
+    const name = String(formData.get("name") || "").trim();
+    if (!name) return { ok: false, error: "Category name is required." };
+    const emoji = String(formData.get("emoji") || "🎆").trim() || "🎆";
+    const description = String(formData.get("description") || "").trim() || `${name} crackers and fireworks.`;
+    let coverPath: string | undefined;
+    const file = formData.get("cover") as File | null;
+    if (file && typeof file !== "string" && file.size) {
+      coverPath = await saveUpload(file, "categories");
+    }
+    if (id) {
+      await prisma.category.update({
+        where: { id },
+        data: {
+          name,
+          emoji,
+          description,
+          ...(coverPath ? { coverPath } : {}),
+        },
+      });
+      revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/category/${id}`);
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidateTag("categories");
+    return { ok: true, id, message: "Category updated." };
+    }
+    const maxSort = await prisma.category.aggregate({ _max: { sortOrder: true } });
+    const created = await prisma.category.create({
       data: {
-        productId,
-        path,
-        alt: name,
-        sortOrder: sort,
-        isCover: existingImages === 0 && sort === 0,
+        name,
+        slug: `${slugify(name)}-${Date.now().toString().slice(-4)}`,
+        emoji,
+        description,
+        coverPath,
+        sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
       },
     });
-    sort += 1;
+    revalidatePath("/admin/products");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidateTag("categories");
+    return { ok: true, id: created.id, message: "Category created." };
+  } catch (e) {
+    return fail(e, "Could not save category.");
   }
-  revalidatePath("/admin/products");
-  revalidatePath("/shop");
-  redirect(`/admin/products/${productId}`);
 }
 
-export async function deleteProduct(id: string) {
-  await requireAdmin();
-  await prisma.product.delete({ where: { id } });
-  revalidatePath("/admin/products");
-  redirect("/admin/products");
-}
-
-export async function deleteProductImage(id: string, productId: string) {
-  await requireAdmin();
-  await prisma.productImage.delete({ where: { id } });
-  const first = await prisma.productImage.findFirst({ where: { productId }, orderBy: { sortOrder: "asc" } });
-  if (first) await prisma.productImage.update({ where: { id: first.id }, data: { isCover: true } });
-  revalidatePath(`/admin/products/${productId}`);
-}
-
-export async function setCoverImage(id: string, productId: string) {
-  await requireAdmin();
-  await prisma.productImage.updateMany({ where: { productId }, data: { isCover: false } });
-  await prisma.productImage.update({ where: { id }, data: { isCover: true } });
-  revalidatePath(`/admin/products/${productId}`);
-}
-
-export async function reorderProductImages(productId: string, imageIds: string[]) {
-  await requireAdmin();
-  for (let i = 0; i < imageIds.length; i++) {
-    await prisma.productImage.update({
-      where: { id: imageIds[i] },
-      data: { sortOrder: i, isCover: i === 0 },
-    });
+export async function deleteCategory(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const count = await prisma.product.count({ where: { categoryId: id } });
+    if (count > 0) {
+      return { ok: false, error: `Move or delete ${count} product(s) in this category first.` };
+    }
+    await prisma.category.delete({ where: { id } });
+    revalidatePath("/admin/products");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    return { ok: true, message: "Category deleted." };
+  } catch (e) {
+    return fail(e, "Could not delete category.");
   }
-  revalidatePath(`/admin/products/${productId}`);
-  revalidatePath("/shop");
 }
 
-export async function saveCombo(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id") || "");
-  const name = String(formData.get("name") || "").trim();
-  const items = String(formData.get("items") || "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const data = {
-    name,
-    slug: slugify(name) + (id ? "" : `-${Date.now().toString().slice(-4)}`),
-    tier: String(formData.get("tier") || ""),
-    itemsJson: JSON.stringify(items),
-    mrp: Number(formData.get("mrp") || 0),
-    salePrice: Number(formData.get("salePrice") || 0),
-    active: formData.get("active") !== "off",
-  };
-  let comboId = id;
-  const file = formData.get("image") as File | null;
-  let imagePath: string | undefined;
-  if (file && typeof file !== "string" && file.size) {
-    imagePath = await saveUpload(file, "combos");
+export async function saveProduct(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const id = String(formData.get("id") || "");
+    const name = String(formData.get("name") || "").trim();
+    const categoryId = String(formData.get("categoryId") || "").trim();
+    if (!name) return { ok: false, error: "Product name is required." };
+    if (!categoryId) return { ok: false, error: "Please select a category." };
+    const cat = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!cat) return { ok: false, error: "Selected category was not found." };
+
+    const payload = {
+      name,
+      description: String(formData.get("description") || ""),
+      categoryId,
+      mrp: Number(formData.get("mrp") || 0),
+      salePrice: Number(formData.get("salePrice") || 0),
+      stock: Number(formData.get("stock") || 0),
+      featured: formData.get("featured") === "on",
+      active: formData.get("active") !== "off",
+      popularity: Number(formData.get("popularity") || 0.5),
+    };
+
+    let productId = id;
+    if (id) {
+      await prisma.product.update({ where: { id }, data: payload });
+    } else {
+      const created = await prisma.product.create({
+        data: {
+          ...payload,
+          slug: `${slugify(name)}-${Date.now().toString().slice(-4)}`,
+        },
+      });
+      productId = created.id;
+    }
+
+    const files = formData.getAll("images") as File[];
+    const existingImages = await prisma.productImage.count({ where: { productId } });
+    let sort = existingImages;
+    for (const file of files) {
+      if (!file || typeof file === "string" || !file.size) continue;
+      const path = await saveUpload(file, "products");
+      await prisma.productImage.create({
+        data: {
+          productId,
+          path,
+          alt: name,
+          sortOrder: sort,
+          isCover: existingImages === 0 && sort === 0,
+        },
+      });
+      sort += 1;
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/category/${categoryId}`);
+    revalidatePath(`/admin/products/${productId}`);
+    revalidatePath("/shop");
+    revalidatePath("/");
+    return { ok: true, id: productId, message: "Product saved." };
+  } catch (e) {
+    return fail(e, "Could not save product.");
   }
-  if (id) {
-    const existing = await prisma.comboPack.findUnique({ where: { id } });
-    await prisma.comboPack.update({
+}
+
+export async function deleteProduct(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const product = await prisma.product.findUnique({
       where: { id },
-      data: { ...data, slug: existing?.slug || data.slug, ...(imagePath ? { imagePath } : {}) },
+      include: { images: true },
     });
-  } else {
-    const created = await prisma.comboPack.create({ data: { ...data, imagePath } });
-    comboId = created.id;
+    if (!product) return { ok: false, error: "Product not found." };
+    for (const img of product.images) await removeUpload(img.path);
+    await prisma.product.delete({ where: { id } });
+    revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/category/${product.categoryId}`);
+    revalidatePath("/shop");
+    return { ok: true, message: "Product deleted." };
+  } catch (e) {
+    return fail(e, "Could not delete product.");
   }
-  revalidatePath("/admin/combos");
-  revalidatePath("/combos");
-  redirect(`/admin/combos/${comboId}`);
 }
 
-export async function deleteCombo(id: string) {
-  await requireAdmin();
-  await prisma.comboPack.delete({ where: { id } });
-  revalidatePath("/admin/combos");
-  redirect("/admin/combos");
-}
-
-export async function updateShipment(formData: FormData) {
-  await requireAdmin();
-  const orderId = String(formData.get("orderId"));
-  const status = String(formData.get("status")) as ShipmentStatus;
-  const note = String(formData.get("note") || "");
-  const shipment = await prisma.shipment.findUnique({ where: { orderId } });
-  if (!shipment) return;
-  await prisma.shipment.update({ where: { id: shipment.id }, data: { status, note } });
-  await prisma.shipmentEvent.create({ data: { shipmentId: shipment.id, status, note } });
-  const files = formData.getAll("photos") as File[];
-  const caption = String(formData.get("caption") || "");
-  for (const file of files) {
-    if (!file || typeof file === "string" || !file.size) continue;
-    const path = await saveUpload(file, "tracking");
-    await prisma.shipmentPhoto.create({
-      data: { shipmentId: shipment.id, path, caption, stage: status },
+export async function deleteProductImage(id: string, productId: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const img = await prisma.productImage.findUnique({ where: { id } });
+    await prisma.productImage.delete({ where: { id } });
+    if (img) await removeUpload(img.path);
+    const first = await prisma.productImage.findFirst({
+      where: { productId },
+      orderBy: { sortOrder: "asc" },
     });
+    if (first) await prisma.productImage.update({ where: { id: first.id }, data: { isCover: true } });
+    revalidatePath(`/admin/products/${productId}`);
+    return { ok: true };
+  } catch (e) {
+    return fail(e, "Could not delete image.");
   }
-  revalidatePath(`/admin/orders/${orderId}`);
 }
 
+export async function setCoverImage(id: string, productId: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    await prisma.productImage.updateMany({ where: { productId }, data: { isCover: false } });
+    await prisma.productImage.update({ where: { id }, data: { isCover: true } });
+    revalidatePath(`/admin/products/${productId}`);
+    return { ok: true };
+  } catch (e) {
+    return fail(e, "Could not set cover image.");
+  }
+}
+
+export async function reorderProductImages(productId: string, imageIds: string[]): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    for (let i = 0; i < imageIds.length; i++) {
+      await prisma.productImage.update({
+        where: { id: imageIds[i] },
+        data: { sortOrder: i, isCover: i === 0 },
+      });
+    }
+    revalidatePath(`/admin/products/${productId}`);
+    revalidatePath("/shop");
+    return { ok: true };
+  } catch (e) {
+    return fail(e, "Could not reorder images.");
+  }
+}
+
+export async function saveCombo(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const id = String(formData.get("id") || "");
+    const name = String(formData.get("name") || "").trim();
+    if (!name) return { ok: false, error: "Combo name is required." };
+
+    let itemsData: ComboItemsData = { products: [], extras: [] };
+    const itemsRaw = String(formData.get("itemsJson") || "");
+    if (itemsRaw) {
+      try {
+        const parsed = JSON.parse(itemsRaw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          itemsData = {
+            products: Array.isArray(parsed.products) ? parsed.products : [],
+            extras: Array.isArray(parsed.extras) ? parsed.extras : [],
+          };
+        } else if (Array.isArray(parsed)) {
+          itemsData = {
+            products: parsed.filter((x) => x && typeof x === "object" && x.id),
+            extras: parsed.filter((x) => typeof x === "string"),
+          };
+        }
+      } catch {
+        itemsData = {
+          products: [],
+          extras: String(formData.get("items") || "")
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean),
+        };
+      }
+    } else {
+      itemsData = {
+        products: [],
+        extras: String(formData.get("items") || "")
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
+    }
+
+    const data = {
+      name,
+      tier: String(formData.get("tier") || ""),
+      itemsJson: serializeComboItems(itemsData),
+      mrp: Number(formData.get("mrp") || 0),
+      salePrice: Number(formData.get("salePrice") || 0),
+      active: formData.get("active") !== "off",
+    };
+
+    let comboId = id;
+    const file = formData.get("image") as File | null;
+    let imagePath: string | undefined;
+    if (file && typeof file !== "string" && file.size) {
+      imagePath = await saveUpload(file, "combos");
+    }
+
+    if (id) {
+      const existing = await prisma.comboPack.findUnique({ where: { id } });
+      if (existing?.imagePath && imagePath) await removeUpload(existing.imagePath);
+      await prisma.comboPack.update({
+        where: { id },
+        data: { ...data, ...(imagePath ? { imagePath } : {}) },
+      });
+    } else {
+      const created = await prisma.comboPack.create({
+        data: {
+          ...data,
+          slug: `${slugify(name)}-${Date.now().toString().slice(-4)}`,
+          imagePath,
+        },
+      });
+      comboId = created.id;
+    }
+
+    revalidatePath("/admin/combos");
+    revalidatePath(`/admin/combos/${comboId}`);
+    revalidatePath("/combos");
+    revalidatePath("/");
+    return { ok: true, id: comboId, message: "Combo saved." };
+  } catch (e) {
+    return fail(e, "Could not save combo.");
+  }
+}
+
+export async function deleteCombo(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const combo = await prisma.comboPack.findUnique({ where: { id } });
+    if (combo?.imagePath) await removeUpload(combo.imagePath);
+    await prisma.comboPack.delete({ where: { id } });
+    revalidatePath("/admin/combos");
+    revalidatePath("/combos");
+    return { ok: true, message: "Combo deleted." };
+  } catch (e) {
+    return fail(e, "Could not delete combo.");
+  }
+}
+
+export async function updateShipment(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const orderId = String(formData.get("orderId"));
+    const status = String(formData.get("status")) as ShipmentStatus;
+    const note = String(formData.get("note") || "");
+    const shipment = await prisma.shipment.findUnique({ where: { orderId } });
+    if (!shipment) return { ok: false, error: "Shipment not found." };
+    await prisma.shipment.update({ where: { id: shipment.id }, data: { status, note } });
+    await prisma.shipmentEvent.create({ data: { shipmentId: shipment.id, status, note } });
+    const files = formData.getAll("photos") as File[];
+    const caption = String(formData.get("caption") || "");
+    for (const file of files) {
+      if (!file || typeof file === "string" || !file.size) continue;
+      const path = await saveUpload(file, "tracking");
+      await prisma.shipmentPhoto.create({
+        data: { shipmentId: shipment.id, path, caption, stage: status },
+      });
+    }
+    revalidatePath(`/admin/orders/${orderId}`);
+    return { ok: true, message: "Shipment updated." };
+  } catch (e) {
+    return fail(e, "Could not update shipment.");
+  }
+}
+
+/** @deprecated use deleteProduct — kept for any leftover form binds */
 export async function deleteProductRedirectSafe(id: string) {
-  await deleteProduct(id);
+  const res = await deleteProduct(id);
+  if (res.ok) redirect("/admin/products");
+  return res;
 }
