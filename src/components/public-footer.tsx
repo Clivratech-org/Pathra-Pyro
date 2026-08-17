@@ -14,7 +14,7 @@ export function PublicFooter({
       <div className="wrap footer-grid">
         <div>
           <div className="brand" style={{ marginBottom: 16 }}>
-            <div className="mark">SP</div>
+            <img className="brand-logo" src="/images/logo.png" alt={settings.businessName} />
             <div className="name">
               {settings.businessName}
               <small>{settings.tagline}</small>

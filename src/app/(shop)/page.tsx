@@ -186,19 +186,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <div className="section-head" style={{ marginBottom: 26 }}>
-            <div className="eyebrow">Trusted Manufacturing Partners</div>
-          </div>
-          <div className="logo-strip">
-            {["STANDARD ★ FIREWORKS", "SUPREME", "AJANTA", "COBRA", "KALPANA", "SONY"].map((b) => (
-              <div className="lg" key={b}>{b}</div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section>
         <div className="wrap">
           <div className="section-head">

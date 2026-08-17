@@ -48,7 +48,7 @@ export function PublicHeader({
       <header className="nav">
         <div className="wrap">
           <Link href="/" className="brand">
-            <div className="mark">SP</div>
+            <img className="brand-logo" src="/images/logo.png" alt={settings.businessName} />
             <div className="name">
               {settings.businessName}
               <small>{settings.tagline}</small>

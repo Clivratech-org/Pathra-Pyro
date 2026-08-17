@@ -4,5 +4,10 @@ import { useCart } from "./cart-provider";
 
 export function Toast() {
   const { toast } = useCart();
-  return <div className={`toast${toast ? " show" : ""}`}>{toast || "✅ Added to cart"}</div>;
+  if (!toast) return null;
+  return (
+    <div className="toast show" role="status" aria-live="polite">
+      {toast}
+    </div>
+  );
 }

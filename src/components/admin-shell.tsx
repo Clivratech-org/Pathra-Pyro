@@ -35,7 +35,7 @@ export function AdminShell({
       <div className={`sb-backdrop${open ? " show" : ""}`} onClick={() => setOpen(false)} />
       <aside className={`sidebar${open ? " open" : ""}`}>
         <div className="sb-brand">
-          <div className="mark">SP</div>
+          <img className="brand-logo" src="/images/logo.png" alt="Sri Pathra Pyro" style={{ width: 42, height: 42 }} />
           <div className="txt">
             <b>Sri Pathra Pyro</b>
             <small>ADMIN CONSOLE</small>

@@ -31,7 +31,7 @@ function LoginInner() {
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
       <form className="card form-card static" style={{ width: "min(420px, 100%)" }} onSubmit={onSubmit}>
         <div className="brand" style={{ marginBottom: 18 }}>
-          <div className="mark">SP</div>
+          <img className="brand-logo" src="/images/logo.png" alt="Sri Pathra Pyro World" />
           <div className="name">Admin Console<small>SRI PATHRA PYRO WORLD</small></div>
         </div>
         {err && <div className="alert error">{err}</div>}
