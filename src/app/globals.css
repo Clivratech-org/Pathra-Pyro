@@ -1,3 +1,6 @@
+/* Loaded at runtime — build no longer depends on fonts.gstatic.com */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap");
+
 /* ============ TOKENS ============ */
 :root{
   --night:#0d0716;
@@ -18,9 +21,9 @@
   --line:rgba(232,185,77,0.22);
   --shadow-gold: 0 0 40px rgba(232,185,77,0.25);
   --radius: 18px;
-  --disp:var(--font-disp), 'Cinzel', serif;
-  --body:var(--font-body), 'Manrope', sans-serif;
-  --mono:var(--font-mono), 'JetBrains Mono', monospace;
+  --disp:'Cinzel', Georgia, 'Times New Roman', serif;
+  --body:'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono:ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Monaco, Consolas, monospace;
 }
 *{box-sizing:border-box; margin:0; padding:0;}
 html{scroll-behavior:smooth; -webkit-text-size-adjust:100%; overflow-x:clip;}
