@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart-provider";
 import { formatInr, mediaUrl } from "@/lib/utils";
 import type { ProductCardData } from "@/components/product-card";
@@ -16,6 +17,7 @@ export function QuickOrderTable({
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const list = useMemo(
     () =>
@@ -38,6 +40,23 @@ export function QuickOrderTable({
     }
     return { count, subtotal, savings: orig - subtotal };
   }, [products, qty]);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFilterOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [filterOpen]);
+
+  function setProductQty(id: string, next: number) {
+    setQty((s) => ({ ...s, [id]: Math.max(0, next) }));
+  }
+
+  function bump(id: string, delta: number) {
+    setProductQty(id, (qty[id] || 0) + delta);
+  }
 
   function pushToCart() {
     let any = false;
@@ -68,6 +87,11 @@ export function QuickOrderTable({
     }
   }
 
+  function pickCategory(next: string) {
+    setCat(next);
+    setFilterOpen(false);
+  }
+
   return (
     <>
       <div className="page-hero">
@@ -78,62 +102,123 @@ export function QuickOrderTable({
           <p>Skip browsing category by category. Search, set quantities, and submit your whole order in minutes.</p>
         </div>
       </div>
-      <section style={{ paddingTop: 40 }}>
+      <section className={`qo-section${summary.count > 0 ? " has-summary" : ""}`}>
         <div className="wrap">
           <div className="qo-toolbar">
-            <div className="search-box" style={{ maxWidth: 340 }}>
+            <div className="search-box qo-search">
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search all products..." />
             </div>
-            <div className="qo-cats">
+            <button
+              type="button"
+              className={`btn btn-outline qo-filter-btn${cat !== "All" ? " active" : ""}`}
+              onClick={() => setFilterOpen(true)}
+            >
+              Filter{cat !== "All" ? `: ${cat}` : ""}
+            </button>
+            <div className="qo-cats desktop-cats">
               {["All", ...categories].map((c) => (
-                <button key={c} className={`chip${c === cat ? " active" : ""}`} onClick={() => setCat(c)}>
+                <button key={c} type="button" className={`chip${c === cat ? " active" : ""}`} onClick={() => setCat(c)}>
                   {c}
                 </button>
               ))}
             </div>
           </div>
+
+          {cat !== "All" && (
+            <div className="qo-active-filter">
+              <span>Showing: {cat}</span>
+              <button type="button" onClick={() => setCat("All")}>
+                Clear
+              </button>
+            </div>
+          )}
+
           <div className="qo-layout">
-            <div className="card static" style={{ overflow: "auto" }}>
-              <table className="qo-table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Qty</th>
-                    <th>Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((p) => {
-                    const n = qty[p.id] || 0;
-                    return (
-                      <tr key={p.id}>
-                        <td>
-                          <div className="qo-row-name">
-                            <img src={mediaUrl(p.img)} alt="" />
-                            <span>{p.name}</span>
-                          </div>
-                        </td>
-                        <td>{p.cat}</td>
-                        <td className="price-cell">{formatInr(p.sale)}</td>
-                        <td>
+            <div className="card static qo-list-card">
+              <div className="qo-mobile-list">
+                {list.map((p) => {
+                  const n = qty[p.id] || 0;
+                  return (
+                    <article className={`qo-item${n > 0 ? " selected" : ""}`} key={p.id}>
+                      <img src={mediaUrl(p.img)} alt="" />
+                      <div className="qo-item-body">
+                        <h4>{p.name}</h4>
+                        <div className="qo-item-meta">
+                          <span>{p.cat}</span>
+                          <strong>{formatInr(p.sale)}</strong>
+                        </div>
+                        <div className="qo-qty">
+                          <button type="button" aria-label="Decrease" onClick={() => bump(p.id, -1)} disabled={n <= 0}>
+                            −
+                          </button>
                           <input
                             type="number"
                             min={0}
-                            className="qty-input"
                             value={n}
-                            onChange={(e) => setQty((s) => ({ ...s, [p.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                            onChange={(e) => setProductQty(p.id, parseInt(e.target.value) || 0)}
                           />
-                        </td>
-                        <td className="price-cell">{formatInr(n * p.sale)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          <button type="button" aria-label="Increase" onClick={() => bump(p.id, 1)}>
+                            +
+                          </button>
+                        </div>
+                        {n > 0 && <div className="qo-item-sub">Line total {formatInr(n * p.sale)}</div>}
+                      </div>
+                    </article>
+                  );
+                })}
+                {!list.length && <p className="qo-empty">No products match your search.</p>}
+              </div>
+
+              <div className="qo-desktop-table">
+                <table className="qo-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Qty</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {list.map((p) => {
+                      const n = qty[p.id] || 0;
+                      return (
+                        <tr key={p.id}>
+                          <td>
+                            <div className="qo-row-name">
+                              <img src={mediaUrl(p.img)} alt="" />
+                              <span>{p.name}</span>
+                            </div>
+                          </td>
+                          <td>{p.cat}</td>
+                          <td className="price-cell">{formatInr(p.sale)}</td>
+                          <td>
+                            <div className="qo-qty compact">
+                              <button type="button" aria-label="Decrease" onClick={() => bump(p.id, -1)} disabled={n <= 0}>
+                                −
+                              </button>
+                              <input
+                                type="number"
+                                min={0}
+                                value={n}
+                                onChange={(e) => setProductQty(p.id, parseInt(e.target.value) || 0)}
+                              />
+                              <button type="button" aria-label="Increase" onClick={() => bump(p.id, 1)}>
+                                +
+                              </button>
+                            </div>
+                          </td>
+                          <td className="price-cell">{formatInr(n * p.sale)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="card summary-card">
+
+            <aside className="card summary-card qo-summary-desktop">
               <h4>Order Summary</h4>
               <div className="summary-line">
                 <span>{summary.count} items</span>
@@ -147,13 +232,54 @@ export function QuickOrderTable({
                 <span>Grand Total</span>
                 <span className="amt">{formatInr(summary.subtotal)}</span>
               </div>
-              <button className="btn btn-primary btn-block" style={{ marginTop: 18 }} onClick={pushToCart}>
+              <button type="button" className="btn btn-primary btn-block" style={{ marginTop: 18 }} onClick={pushToCart}>
                 Order Now → Go to Cart
               </button>
-            </div>
+              <Link href="/shop" className="btn btn-outline btn-block" style={{ marginTop: 10 }}>
+                Browse Shop
+              </Link>
+            </aside>
           </div>
         </div>
       </section>
+
+      {summary.count > 0 && (
+        <div className="qo-mobile-summary">
+          <div>
+            <strong>{summary.count} items</strong>
+            <span>{formatInr(summary.subtotal)}</span>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={pushToCart}>
+            Order Now
+          </button>
+        </div>
+      )}
+
+      {filterOpen && (
+        <div className="qo-filter-overlay" onClick={() => setFilterOpen(false)}>
+          <div className="qo-filter-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Filter products">
+            <div className="qo-filter-head">
+              <h3>Filter by category</h3>
+              <button type="button" className="icon-mini" onClick={() => setFilterOpen(false)} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className="qo-filter-options">
+              {["All", ...categories].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={c === cat ? "active" : ""}
+                  onClick={() => pickCategory(c)}
+                >
+                  {c}
+                  {c === cat && <span>✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

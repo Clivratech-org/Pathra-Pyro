@@ -249,12 +249,12 @@ export default async function HomePage() {
 
       <section>
         <div className="wrap">
-          <div className="notice-band" style={{ gridTemplateColumns: "1fr auto", alignItems: "center" }}>
-            <div>
+          <div className="notice-band help-cta-band">
+            <div className="help-cta-copy">
               <h4>Need Help Choosing Crackers?</h4>
               <p>Talk to our team directly — we&apos;ll help you build the perfect combo for your budget.</p>
             </div>
-            <div className="cta-row" style={{ margin: 0 }}>
+            <div className="help-cta-actions">
               <a className="btn btn-wa" href={waLink(settings.whatsapp)} target="_blank" rel="noreferrer">WhatsApp Us</a>
               <a className="btn btn-primary" href={`tel:${settings.phone.replace(/\s/g, "")}`}>Call Now</a>
             </div>
