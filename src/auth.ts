@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/auth.config";
-import { prisma } from "@/lib/prisma";
+import { findCustomerByIdentifier } from "@/lib/customer-auth";
 
 declare module "next-auth" {
   interface User {
@@ -32,16 +32,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         portal: { label: "Portal", type: "text" },
       },
       async authorize(credentials) {
-        const identifier = String(credentials?.identifier || "").trim().toLowerCase();
+        const identifier = String(credentials?.identifier || "").trim();
         const password = String(credentials?.password || "");
         const portal = String(credentials?.portal || "customer");
         if (!identifier || !password) return null;
 
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [{ email: identifier }, { phone: identifier.replace(/\D/g, "") }],
-          },
-        });
+        const user = await findCustomerByIdentifier(identifier);
         if (!user) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
