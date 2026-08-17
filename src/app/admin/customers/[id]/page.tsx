@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { saveLead } from "@/app/admin/actions";
 import { prisma } from "@/lib/prisma";
-import { resolveCartLines } from "@/lib/checkout";
+import { resolveCartLinesAdmin } from "@/lib/checkout";
 import { getSettings } from "@/lib/settings";
 import { cartTotals, formatInr, mediaUrl, waLink } from "@/lib/utils";
 import { TotalsBreakdown } from "@/components/totals-breakdown";
+
+export const dynamic = "force-dynamic";
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +31,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       return null;
     })
     .filter(Boolean) as { kind: "product" | "combo"; id: string; qty: number }[];
-  const { lines } = raw.length ? await resolveCartLines(raw) : { lines: [] };
+  const { lines, warnings } = raw.length ? await resolveCartLinesAdmin(raw) : { lines: [], warnings: [] };
+  const cartQty = customer.cartItems.reduce((s, i) => s + i.qty, 0);
   const totals = cartTotals(lines, { gstPercent: settings.gstPercent, packingCharge: settings.packingCharge });
 
   return (
@@ -49,11 +52,23 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       </div>
 
       <div className="card panel static">
-        <h3 style={{ marginBottom: 14 }}>Live cart {lines.length > 0 && <span className="pill new">active</span>}</h3>
+        <h3 style={{ marginBottom: 14 }}>
+          Live cart
+          {cartQty > 0 && <span className="pill new" style={{ marginLeft: 8 }}>{cartQty} items</span>}
+        </h3>
         {lines.length === 0 ? (
-          <p className="cell-sub">Cart is empty.</p>
+          <p className="cell-sub">
+            {cartQty > 0
+              ? "Cart has saved items but they could not be loaded. Check product catalogue."
+              : "Cart is empty."}
+          </p>
         ) : (
           <>
+            {warnings.length > 0 && (
+              <div className="alert error" style={{ marginBottom: 12, fontSize: "0.85rem" }}>
+                {warnings.join(" · ")}
+              </div>
+            )}
             <div className="table-wrap">
               <table className="data">
                 <thead>
@@ -134,23 +149,30 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                 <tr>
                   <th>Date</th>
                   <th>Source</th>
-                  <th>Interest</th>
+                  <th>Details</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {customer.leads.map((l) => (
                   <tr key={l.id}>
-                    <td>{l.createdAt.toLocaleDateString("en-IN")}</td>
+                    <td>{l.createdAt.toLocaleString("en-IN")}</td>
                     <td>{l.source}</td>
-                    <td>{l.interest}</td>
+                    <td>
+                      <strong>{l.interest}</strong>
+                      {l.notes && (
+                        <div className="cell-sub" style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>
+                          {l.notes}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <form
                         action={async (fd) => {
                           "use server";
                           await saveLead(fd);
                         }}
-                        style={{ display: "flex", gap: 8, alignItems: "center" }}
+                        className="lead-status-form"
                       >
                         <input type="hidden" name="id" value={l.id} />
                         <input type="hidden" name="name" value={l.name} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 
 type ProductPayload = {
@@ -23,12 +24,14 @@ export function EnquireButton({
   className?: string;
   children: React.ReactNode;
 }) {
-  const { requireLogin, items } = useCart();
+  const { requireLogin, items, showToast } = useCart();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
 
   async function onClick() {
     setErr("");
+    setOk("");
     if (!requireLogin()) return;
     if (payload.kind === "cart" && !items.length) {
       setErr("Add items to your cart first.");
@@ -54,17 +57,33 @@ export function EnquireButton({
       return;
     }
     if (!res.ok || !data.url) {
-      setErr(data.error || "Could not start enquiry.");
+      setErr(data.error || "Could not send enquiry.");
       return;
     }
-    window.open(data.url, "_blank", "noopener,noreferrer");
+
+    const msg = data.message || "Enquiry saved! Our team will contact you soon.";
+    setOk(msg);
+    showToast(`✅ ${msg}`);
+
+    const popup = window.open(data.url, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      window.location.href = data.url;
+    }
   }
 
   return (
     <div style={{ marginTop: 12, width: "100%" }}>
       <button type="button" className={className} onClick={onClick} disabled={busy}>
-        {busy ? "Opening…" : children}
+        {busy ? "Sending…" : children}
       </button>
+      {ok && (
+        <p className="alert ok" style={{ marginTop: 8 }}>
+          {ok}{" "}
+          <Link href="/account/enquiries" style={{ color: "inherit", textDecoration: "underline" }}>
+            View my enquiries
+          </Link>
+        </p>
+      )}
       {err && <p className="alert error" style={{ marginTop: 8 }}>{err}</p>}
     </div>
   );

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AccountNav } from "@/components/account-nav";
 import { ProfileForm } from "@/components/profile-form";
 import { formatInr } from "@/lib/utils";
-import { resolveCartLines } from "@/lib/checkout";
+import { resolveCartLinesAdmin } from "@/lib/checkout";
 import { cartTotals } from "@/lib/utils";
 import { getSettings } from "@/lib/settings";
 
@@ -28,7 +28,7 @@ export default async function AccountPage() {
       return null;
     })
     .filter(Boolean) as { kind: "product" | "combo"; id: string; qty: number }[];
-  const { lines } = raw.length ? await resolveCartLines(raw) : { lines: [] };
+  const { lines } = raw.length ? await resolveCartLinesAdmin(raw) : { lines: [] };
   const totals = cartTotals(lines, { gstPercent: settings.gstPercent, packingCharge: settings.packingCharge });
 
   return (

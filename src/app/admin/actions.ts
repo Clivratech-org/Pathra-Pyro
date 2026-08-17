@@ -59,11 +59,13 @@ export async function saveLead(formData: FormData): Promise<ActionResult> {
         where: { id },
         data: { ...data, userId: existing?.userId },
       });
+      if (existing?.userId) revalidatePath(`/admin/customers/${existing.userId}`);
     } else {
       const match = await prisma.user.findFirst({
         where: { role: "CUSTOMER", phone: { contains: phone.replace(/\D/g, "").slice(-10) || phone } },
       });
       await prisma.lead.create({ data: { ...data, userId: match?.id } });
+      if (match?.id) revalidatePath(`/admin/customers/${match.id}`);
     }
     revalidatePath("/admin/leads");
     revalidatePath("/admin/customers");

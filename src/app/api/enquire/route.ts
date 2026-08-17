@@ -78,10 +78,15 @@ export async function POST(req: Request) {
     },
   });
   revalidateTag("leads");
+  revalidateTag("carts");
   revalidatePath("/admin/leads");
   revalidatePath("/admin/customers");
   revalidatePath(`/admin/customers/${user.id}`);
   revalidatePath("/account/enquiries");
 
-  return NextResponse.json({ url: waLink(settings.whatsapp, lines.join("\n")) });
+  return NextResponse.json({
+    ok: true,
+    message: "Enquiry saved. Opening WhatsApp to our team…",
+    url: waLink(settings.whatsapp, lines.join("\n")),
+  });
 }

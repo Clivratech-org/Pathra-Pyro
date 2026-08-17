@@ -159,6 +159,8 @@ nav.links a.navlink.active, nav.links button.navlink.active{color:var(--night); 
   background:rgba(232,185,77,0.12); color:var(--gold-2);
 }
 .account-dropdown-logout{color:var(--red);}
+.lead-status-form{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+.lead-status-form select{min-width:120px;}
 .burger{display:none; font-size:1.4rem; background:none; border:none; color:var(--gold-2);}
 
 @media(max-width:980px){
