@@ -7,7 +7,7 @@ import { AccountNav } from "@/components/account-nav";
 
 export default async function OrdersPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id || session.user.role !== "CUSTOMER") redirect("/login");
   const orders = await prisma.order.findMany({
     where: { userId: session.user.id },
     include: { shipment: true, items: true },

@@ -55,6 +55,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <div className="eyebrow">{mode === "login" ? "Welcome back" : "Create account"}</div>
         <h1 style={{ margin: "10px 0 18px" }}>{mode === "login" ? "Customer Login" : "Register"}</h1>
         {err && <div className="alert error">{err}</div>}
+        {from !== "/account" && (
+          <p style={{ color: "var(--cream-dim)", marginBottom: 14, fontSize: "0.9rem" }}>
+            Log in to add items to your cart, enquire on WhatsApp, and manage your orders.
+          </p>
+        )}
         <form className="form-row" onSubmit={onSubmit}>
           {mode === "register" && (
             <div className="field">
@@ -89,9 +94,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </form>
         <p style={{ marginTop: 16, fontSize: "0.85rem", color: "var(--cream-dim)" }}>
           {mode === "login" ? (
-            <>New here? <Link href="/register">Create an account</Link></>
+            <>New here? <Link href={`/register?from=${encodeURIComponent(from)}`}>Create an account</Link></>
           ) : (
-            <>Already registered? <Link href="/login">Log in</Link></>
+            <>Already registered? <Link href={`/login?from=${encodeURIComponent(from)}`}>Log in</Link></>
           )}
         </p>
       </div>

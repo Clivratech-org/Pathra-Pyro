@@ -7,7 +7,8 @@ import { fetchPricedCombos, fetchPricedProducts, toPricedCard } from "@/lib/cata
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { comboItemsAsLabels } from "@/lib/combo-items";
-import { mediaUrl, waLink } from "@/lib/utils";
+import { mediaUrl } from "@/lib/utils";
+import { WhatsAppCta } from "@/components/whatsapp-cta";
 
 export default async function HomePage() {
   const [settings, featuredRaw, combos, categories] = await Promise.all([
@@ -52,9 +53,9 @@ export default async function HomePage() {
             <div className="cta-row">
               <Link className="btn btn-primary" href="/shop">🛍️ Shop Crackers</Link>
               <Link className="btn btn-outline" href="/quick-order">⚡ Quick Order</Link>
-              <a className="btn btn-wa" href={waLink(settings.whatsapp, "Hi, I want to enquire about crackers")} target="_blank" rel="noreferrer">
+              <WhatsAppCta className="btn btn-wa" text="Hi, I want to enquire about crackers">
                 🟢 WhatsApp Enquiry
-              </a>
+              </WhatsAppCta>
             </div>
             <div className="discount-pill">
               <div className="num">40–90%</div>
@@ -255,7 +256,7 @@ export default async function HomePage() {
               <p>Talk to our team directly — we&apos;ll help you build the perfect combo for your budget.</p>
             </div>
             <div className="help-cta-actions">
-              <a className="btn btn-wa" href={waLink(settings.whatsapp)} target="_blank" rel="noreferrer">WhatsApp Us</a>
+              <WhatsAppCta className="btn btn-wa">WhatsApp Us</WhatsAppCta>
               <a className="btn btn-primary" href={`tel:${settings.phone.replace(/\s/g, "")}`}>Call Now</a>
             </div>
           </div>

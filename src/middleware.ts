@@ -37,15 +37,19 @@ export default auth((req) => {
     }
   }
 
-  if (path.startsWith("/account") && !isLoggedIn) {
+  const needsCustomer =
+    path.startsWith("/account") || path === "/cart" || path.startsWith("/checkout");
+  if (needsCustomer && (!isLoggedIn || role !== "CUSTOMER")) {
     const url = nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("from", path);
+    url.searchParams.set("from", path + nextUrl.search);
     return NextResponse.redirect(url);
   }
 
   if ((path === "/login" || path === "/register") && isLoggedIn && role === "CUSTOMER") {
-    return NextResponse.redirect(new URL("/account", nextUrl));
+    const dest = nextUrl.searchParams.get("from") || "/account";
+    const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/account";
+    return NextResponse.redirect(new URL(safe, nextUrl));
   }
 
   if (path === "/admin/login" && isLoggedIn && role === "ADMIN") {

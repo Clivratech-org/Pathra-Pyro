@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { resolveCartLines } from "@/lib/checkout";
 import { prisma } from "@/lib/prisma";
@@ -42,5 +43,7 @@ export async function PUT(req: Request) {
       },
     });
   }
+  revalidateTag("carts");
+  revalidatePath("/admin/customers");
   return NextResponse.json({ ok: true });
 }

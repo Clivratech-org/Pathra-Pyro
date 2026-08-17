@@ -20,6 +20,16 @@ export default async function SettingsPage() {
           <div className="field"><label>GSTIN</label><input name="gstin" defaultValue={s.gstin} /></div>
           <div className="field"><label>Explosives License No.</label><input name="license" defaultValue={s.license} /></div>
         </div>
+        <div className="form-row two">
+          <div className="field">
+            <label>GST % (on product subtotal)</label>
+            <input name="gstPercent" type="number" min={0} step={0.01} defaultValue={s.gstPercent} />
+          </div>
+          <div className="field">
+            <label>Packing charges (₹, flat)</label>
+            <input name="packingCharge" type="number" min={0} step={1} defaultValue={s.packingCharge} />
+          </div>
+        </div>
         <div className="field"><label>Address</label><textarea name="address" rows={2} defaultValue={s.address} /></div>
         <div className="field"><label>City line (footer)</label><input name="cityLine" defaultValue={s.cityLine} /></div>
         <div className="form-row two">

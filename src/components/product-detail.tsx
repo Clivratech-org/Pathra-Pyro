@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "@/components/cart-provider";
+import { EnquireButton } from "@/components/enquire-button";
 import { discountPct, formatInr, mediaUrl, stockStatus } from "@/lib/utils";
 import { ProductCard, type ProductCardData } from "@/components/product-card";
 
@@ -95,6 +96,12 @@ export function ProductDetail({
                 {product.stock <= 0 ? "Out of Stock" : added ? "Added ✓" : "Add to Cart"}
               </button>
             </div>
+            <EnquireButton
+              className="btn btn-wa"
+              payload={{ kind: "product", name: product.name, qty, sale: product.sale }}
+            >
+              Enquire on WhatsApp
+            </EnquireButton>
           </div>
         </div>
       </section>

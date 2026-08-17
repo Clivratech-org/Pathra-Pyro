@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart-provider";
-import { formatInr, mediaUrl } from "@/lib/utils";
+import { TotalsBreakdown } from "@/components/totals-breakdown";
+import { cartTotals, formatInr, mediaUrl } from "@/lib/utils";
 import type { ProductCardData } from "@/components/product-card";
 
 export function QuickOrderTable({
@@ -13,7 +14,7 @@ export function QuickOrderTable({
   products: ProductCardData[];
   categories: string[];
 }) {
-  const { add, showToast } = useCart();
+  const { add, showToast, gstPercent, packingCharge, requireLogin } = useCart();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
   const [qty, setQty] = useState<Record<string, number>>({});
@@ -28,18 +29,21 @@ export function QuickOrderTable({
   );
 
   const summary = useMemo(() => {
-    let count = 0;
-    let subtotal = 0;
-    let orig = 0;
-    for (const p of products) {
-      const n = qty[p.id] || 0;
-      if (n <= 0) continue;
-      count += n;
-      subtotal += n * p.sale;
-      orig += n * p.mrp;
-    }
-    return { count, subtotal, savings: orig - subtotal };
-  }, [products, qty]);
+    const lines = products
+      .filter((p) => (qty[p.id] || 0) > 0)
+      .map((p) => ({
+        key: p.id,
+        kind: "product" as const,
+        id: p.id,
+        name: p.name,
+        cat: p.cat,
+        mrp: p.mrp,
+        sale: p.sale,
+        img: p.img,
+        qty: qty[p.id] || 0,
+      }));
+    return cartTotals(lines, { gstPercent, packingCharge });
+  }, [products, qty, gstPercent, packingCharge]);
 
   useEffect(() => {
     if (!filterOpen) return;
@@ -59,6 +63,7 @@ export function QuickOrderTable({
   }
 
   function pushToCart() {
+    if (!requireLogin()) return;
     let any = false;
     for (const p of products) {
       const n = qty[p.id] || 0;
@@ -220,18 +225,7 @@ export function QuickOrderTable({
 
             <aside className="card summary-card qo-summary-desktop">
               <h4>Order Summary</h4>
-              <div className="summary-line">
-                <span>{summary.count} items</span>
-                <span className="amt">{formatInr(summary.subtotal)}</span>
-              </div>
-              <div className="summary-line">
-                <span>Est. Discount Applied</span>
-                <span className="amt">{formatInr(summary.savings)}</span>
-              </div>
-              <div className="summary-line total">
-                <span>Grand Total</span>
-                <span className="amt">{formatInr(summary.subtotal)}</span>
-              </div>
+              <TotalsBreakdown totals={summary} savingsLabel="Est. Discount Applied" />
               <button type="button" className="btn btn-primary btn-block" style={{ marginTop: 18 }} onClick={pushToCart}>
                 Order Now → Go to Cart
               </button>
@@ -247,7 +241,7 @@ export function QuickOrderTable({
         <div className="qo-mobile-summary">
           <div>
             <strong>{summary.count} items</strong>
-            <span>{formatInr(summary.subtotal)}</span>
+            <span>{formatInr(summary.total)}</span>
           </div>
           <button type="button" className="btn btn-primary" onClick={pushToCart}>
             Order Now

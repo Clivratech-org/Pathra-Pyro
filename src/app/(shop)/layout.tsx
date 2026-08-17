@@ -33,7 +33,12 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
 
   return (
     <AuthSession>
-      <CartProvider userId={session?.user?.role === "CUSTOMER" ? session.user.id : null}>
+      <CartProvider
+        userId={session?.user?.role === "CUSTOMER" ? session.user.id : null}
+        gstPercent={settings.gstPercent}
+        packingCharge={settings.packingCharge}
+        whatsapp={settings.whatsapp}
+      >
         <div className="bg-glow" />
         <div className="grain" />
         <PublicHeader

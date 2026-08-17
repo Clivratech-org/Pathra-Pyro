@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/settings";
-import { waLink } from "@/lib/utils";
+import { WhatsAppCta } from "@/components/whatsapp-cta";
 
 export function PublicFooter({
   settings,
@@ -26,7 +26,7 @@ export function PublicFooter({
           <div className="social-row">
             <a className="icon-btn" href="#" aria-label="Facebook">f</a>
             <a className="icon-btn" href="#" aria-label="Instagram">in</a>
-            <a className="icon-btn" href={waLink(settings.whatsapp)} target="_blank" rel="noreferrer">wa</a>
+            <WhatsAppCta className="icon-btn">wa</WhatsAppCta>
           </div>
         </div>
         <div>

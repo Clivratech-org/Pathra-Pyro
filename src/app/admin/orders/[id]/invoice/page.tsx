@@ -42,7 +42,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           ))}
         </tbody>
       </table>
-      <p style={{ textAlign: "right", marginTop: 16, fontWeight: 800 }}>Grand Total {formatInr(order.total)}</p>
+      <p style={{ textAlign: "right", marginTop: 16 }}>
+        Subtotal {formatInr(order.subtotal)}<br />
+        {order.gstAmount > 0 && <>GST ({order.gstPercent}%) {formatInr(order.gstAmount)}<br /></>}
+        {order.packingCharge > 0 && <>Packing {formatInr(order.packingCharge)}<br /></>}
+        <strong>Grand Total {formatInr(order.total)}</strong>
+      </p>
       <p style={{ fontSize: "0.8rem", marginTop: 24 }}>Payment: {order.paymentStatus} · Channel: {order.channel}</p>
       <PrintButton />
     </div>

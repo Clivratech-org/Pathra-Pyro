@@ -77,9 +77,25 @@ export type CartLine = {
   slug?: string;
 };
 
-export function cartTotals(items: CartLine[]) {
+export type CartFees = {
+  gstPercent?: number;
+  packingCharge?: number;
+};
+
+export function cartTotals(items: CartLine[], fees: CartFees = {}) {
   const count = items.reduce((s, i) => s + i.qty, 0);
   const subtotal = items.reduce((s, i) => s + i.sale * i.qty, 0);
   const orig = items.reduce((s, i) => s + i.mrp * i.qty, 0);
-  return { count, subtotal, savings: orig - subtotal, orig };
+  const gstPercent = Math.max(0, Number(fees.gstPercent) || 0);
+  const packingCharge = Math.max(0, Math.round(Number(fees.packingCharge) || 0));
+  const gstAmount = Math.round(subtotal * gstPercent / 100);
+  const total = subtotal + gstAmount + packingCharge;
+  return { count, subtotal, savings: orig - subtotal, orig, gstPercent, gstAmount, packingCharge, total };
+}
+
+export type CartTotals = ReturnType<typeof cartTotals>;
+
+export function loginPath(from?: string) {
+  const dest = from && from.startsWith("/") && !from.startsWith("//") ? from : "/";
+  return `/login?from=${encodeURIComponent(dest)}`;
 }

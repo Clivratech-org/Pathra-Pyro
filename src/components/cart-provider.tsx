@@ -3,17 +3,34 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { CartLine } from "@/lib/utils";
 import { cartTotals } from "@/lib/utils";
+import { requireCustomerLogin } from "@/components/login-gate";
 
 const STORAGE = "pathra-cart-v1";
+
+function mergeCartLines(a: CartLine[], b: CartLine[]): CartLine[] {
+  const map = new Map<string, CartLine>();
+  for (const src of [a, b]) {
+    for (const line of src) {
+      const prev = map.get(line.key);
+      if (!prev || line.qty > prev.qty) map.set(line.key, line);
+    }
+  }
+  return Array.from(map.values());
+}
 
 type CartContextValue = {
   items: CartLine[];
   count: number;
   totals: ReturnType<typeof cartTotals>;
+  loggedIn: boolean;
+  whatsapp: string;
+  gstPercent: number;
+  packingCharge: number;
   add: (line: Omit<CartLine, "qty">, qty?: number) => void;
   setQty: (key: string, qty: number) => void;
   remove: (key: string) => void;
   clear: () => void;
+  requireLogin: (action?: () => void) => boolean;
   toast: string;
   showToast: (msg: string) => void;
 };
@@ -23,13 +40,21 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({
   children,
   userId,
+  gstPercent = 0,
+  packingCharge = 0,
+  whatsapp = "",
 }: {
   children: React.ReactNode;
   userId?: string | null;
+  gstPercent?: number;
+  packingCharge?: number;
+  whatsapp?: string;
 }) {
   const [items, setItems] = useState<CartLine[]>([]);
   const [toast, setToast] = useState("");
   const [ready, setReady] = useState(false);
+  const [synced, setSynced] = useState(!userId);
+  const loggedIn = Boolean(userId);
 
   useEffect(() => {
     try {
@@ -47,40 +72,61 @@ export function CartProvider({
   }, [items, ready]);
 
   useEffect(() => {
-    if (!userId || !ready) return;
+    if (!ready) return;
+    if (!userId) {
+      setSynced(true);
+      return;
+    }
+    let cancelled = false;
+    setSynced(false);
     fetch("/api/cart")
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data.items) && data.items.length) setItems(data.items);
+        if (cancelled) return;
+        const remote = Array.isArray(data.items) ? (data.items as CartLine[]) : [];
+        setItems((local) => mergeCartLines(local, remote));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setSynced(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [userId, ready]);
 
   useEffect(() => {
-    if (!userId || !ready) return;
+    if (!userId || !ready || !synced) return;
     fetch("/api/cart", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items }),
     }).catch(() => {});
-  }, [items, userId, ready]);
+  }, [items, userId, ready, synced]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(""), 2400);
   }, []);
 
+  const requireLogin = useCallback(
+    (action?: () => void) => requireCustomerLogin(loggedIn, action),
+    [loggedIn]
+  );
+
   const add = useCallback(
     (line: Omit<CartLine, "qty">, qty = 1) => {
-      const q = Math.max(1, qty);
-      setItems((prev) => {
-        const found = prev.find((i) => i.key === line.key);
-        if (found) return prev.map((i) => (i.key === line.key ? { ...i, qty: i.qty + q } : i));
-        return [...prev, { ...line, qty: q }];
+      requireLogin(() => {
+        const q = Math.max(1, qty);
+        setItems((prev) => {
+          const found = prev.find((i) => i.key === line.key);
+          if (found) return prev.map((i) => (i.key === line.key ? { ...i, qty: i.qty + q } : i));
+          return [...prev, { ...line, qty: q }];
+        });
+        showToast(`✅ ${line.name} added to cart`);
       });
-      showToast(`✅ ${line.name} added to cart`);
     },
-    [showToast]
+    [requireLogin, showToast]
   );
 
   const setQty = useCallback((key: string, qty: number) => {
@@ -96,12 +142,45 @@ export function CartProvider({
 
   const clear = useCallback(() => setItems([]), []);
 
-  const totals = useMemo(() => cartTotals(items), [items]);
+  const totals = useMemo(
+    () => cartTotals(items, { gstPercent, packingCharge }),
+    [items, gstPercent, packingCharge]
+  );
   const count = totals.count;
 
   const value = useMemo(
-    () => ({ items, count, totals, add, setQty, remove, clear, toast, showToast }),
-    [items, count, totals, add, setQty, remove, clear, toast, showToast]
+    () => ({
+      items,
+      count,
+      totals,
+      loggedIn,
+      whatsapp,
+      gstPercent,
+      packingCharge,
+      add,
+      setQty,
+      remove,
+      clear,
+      requireLogin,
+      toast,
+      showToast,
+    }),
+    [
+      items,
+      count,
+      totals,
+      loggedIn,
+      whatsapp,
+      gstPercent,
+      packingCharge,
+      add,
+      setQty,
+      remove,
+      clear,
+      requireLogin,
+      toast,
+      showToast,
+    ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

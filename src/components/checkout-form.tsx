@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/components/cart-provider";
+import { TotalsBreakdown } from "@/components/totals-breakdown";
 import { formatInr, mediaUrl } from "@/lib/utils";
 
 type Prefill = { name: string; phone: string; email: string; address: string; pincode: string };
 
-export function CheckoutForm({ prefill, loggedIn }: { prefill: Prefill; loggedIn: boolean }) {
+export function CheckoutForm({ prefill }: { prefill: Prefill; loggedIn?: boolean }) {
   const { items, totals, clear } = useCart();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -113,11 +114,7 @@ export function CheckoutForm({ prefill, loggedIn }: { prefill: Prefill; loggedIn
           <div className="crumb">Home / Cart / <span>Checkout</span></div>
           <div className="eyebrow">Secure Payment</div>
           <h1>Checkout</h1>
-          <p>
-            {loggedIn ? "Your account details are prefilled." : "Guest checkout — or "}
-            {!loggedIn && <Link href="/login?from=/checkout">log in</Link>}
-            {!loggedIn && " to save this order to your account."}
-          </p>
+          <p>Your account details are prefilled. GST and packing charges are applied automatically.</p>
         </div>
       </div>
       <section style={{ paddingTop: 40 }}>
@@ -150,7 +147,7 @@ export function CheckoutForm({ prefill, loggedIn }: { prefill: Prefill; loggedIn
               </div>
             </div>
             <button className="btn btn-primary btn-block" style={{ marginTop: 18 }} disabled={busy}>
-              {busy ? "Processing…" : `Pay ${formatInr(totals.subtotal)} with Razorpay`}
+              {busy ? "Processing…" : `Pay ${formatInr(totals.total)} with Razorpay`}
             </button>
           </form>
           <div className="card summary-card">
@@ -164,14 +161,7 @@ export function CheckoutForm({ prefill, loggedIn }: { prefill: Prefill; loggedIn
                 <span className="amt">{formatInr(i.sale * i.qty)}</span>
               </div>
             ))}
-            <div className="summary-line">
-              <span>You Save</span>
-              <span className="amt">{formatInr(totals.savings)}</span>
-            </div>
-            <div className="summary-line total">
-              <span>To Pay</span>
-              <span className="amt">{formatInr(totals.subtotal)}</span>
-            </div>
+            <TotalsBreakdown totals={totals} totalLabel="To Pay" />
           </div>
         </div>
       </section>

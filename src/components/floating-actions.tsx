@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCart } from "./cart-provider";
-import { waLink } from "@/lib/utils";
+import { WhatsAppCta } from "@/components/whatsapp-cta";
 
-export function FloatingActions({ phone, whatsapp }: { phone: string; whatsapp: string }) {
+export function FloatingActions({ phone }: { phone: string; whatsapp?: string }) {
   const { count } = useCart();
   return (
     <>
@@ -19,16 +19,10 @@ export function FloatingActions({ phone, whatsapp }: { phone: string; whatsapp: 
         <a className="fab call" href={`tel:${phone.replace(/\s/g, "")}`} aria-label="Call">
           📞
         </a>
-        <a
-          className="fab wa"
-          href={waLink(whatsapp, "Hi, I want to order crackers")}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="WhatsApp"
-        >
+        <WhatsAppCta className="fab wa" text="Hi, I want to order crackers" aria-label="WhatsApp">
           <span className="ping" />
           💬
-        </a>
+        </WhatsAppCta>
       </div>
     </>
   );

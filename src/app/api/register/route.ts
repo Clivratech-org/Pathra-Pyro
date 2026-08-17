@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     where: { OR: [{ phone }, ...(email ? [{ email }] : [])] },
   });
   if (exists) return NextResponse.json({ error: "An account with this phone or email already exists." }, { status: 400 });
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name,
       phone,
@@ -23,6 +23,10 @@ export async function POST(req: Request) {
       passwordHash: await bcrypt.hash(password, 10),
       role: "CUSTOMER",
     },
+  });
+  await prisma.lead.updateMany({
+    where: { userId: null, phone: { contains: phone } },
+    data: { userId: user.id },
   });
   return NextResponse.json({ ok: true });
 }

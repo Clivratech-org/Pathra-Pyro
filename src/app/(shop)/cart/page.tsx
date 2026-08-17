@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
+import { EnquireButton } from "@/components/enquire-button";
+import { TotalsBreakdown } from "@/components/totals-breakdown";
 import { formatInr, mediaUrl } from "@/lib/utils";
 
 export default function CartPage() {
@@ -14,7 +16,7 @@ export default function CartPage() {
           <div className="crumb">Home / <span>Cart</span></div>
           <div className="eyebrow">Review & Confirm</div>
           <h1>Your Cart</h1>
-          <p>Review quantities, then continue to secure Razorpay checkout. Guest checkout is available.</p>
+          <p>Review quantities, enquire about these items on WhatsApp, or continue to secure checkout.</p>
         </div>
       </div>
       <section style={{ paddingTop: 40 }}>
@@ -51,25 +53,19 @@ export default function CartPage() {
           <div>
             <div className="card summary-card">
               <h4>Cart Total</h4>
-              <div className="summary-line">
-                <span>{totals.count} items</span>
-                <span className="amt">{formatInr(totals.subtotal)}</span>
-              </div>
-              <div className="summary-line">
-                <span>You Save</span>
-                <span className="amt">{formatInr(totals.savings)}</span>
-              </div>
-              <div className="summary-line total">
-                <span>Grand Total</span>
-                <span className="amt">{formatInr(totals.subtotal)}</span>
-              </div>
+              <TotalsBreakdown totals={totals} />
               <Link
-                className={`btn btn-primary btn-block${items.length === 0 ? "" : ""}`}
+                className="btn btn-primary btn-block"
                 href="/checkout"
                 style={{ marginTop: 18, pointerEvents: items.length === 0 ? "none" : "auto", opacity: items.length === 0 ? 0.5 : 1 }}
               >
                 Proceed to Checkout →
               </Link>
+              {items.length > 0 && (
+                <EnquireButton className="btn btn-wa btn-block" payload={{ kind: "cart" }}>
+                  Enquire about these items
+                </EnquireButton>
+              )}
             </div>
           </div>
         </div>

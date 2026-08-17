@@ -68,6 +68,7 @@ model User {
   updatedAt    DateTime   @updatedAt
   orders       Order[]
   cartItems    CartItem[]
+  leads        Lead[]
 }
 
 model Category {
@@ -151,6 +152,8 @@ model CartItem {
 
 model Lead {
   id          String     @id @default(cuid())
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id])
   name        String
   phone       String
   interest    String
@@ -173,6 +176,9 @@ model Order {
   pincode           String
   subtotal          Int
   savings           Int
+  gstPercent        Int           @default(0)
+  gstAmount         Int           @default(0)
+  packingCharge     Int           @default(0)
   total             Int
   paymentStatus     PaymentStatus @default(pending)
   channel           OrderChannel  @default(Website)

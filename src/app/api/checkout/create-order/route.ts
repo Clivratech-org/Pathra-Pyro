@@ -3,10 +3,14 @@ import { auth } from "@/auth";
 import { resolveCartLines } from "@/lib/checkout";
 import { prisma } from "@/lib/prisma";
 import { getRazorpay, razorpayConfigured } from "@/lib/razorpay";
+import { getSettings } from "@/lib/settings";
 import { cartTotals, nextOrderNumber } from "@/lib/utils";
 
 export async function POST(req: Request) {
   const session = await auth();
+  if (!session?.user?.id || session.user.role !== "CUSTOMER") {
+    return NextResponse.json({ error: "Please log in to checkout." }, { status: 401 });
+  }
   const body = await req.json();
   const customer = body.customer as {
     name: string;
@@ -23,14 +27,18 @@ export async function POST(req: Request) {
   const { lines: items, error } = await resolveCartLines(rawItems);
   if (error) return NextResponse.json({ error }, { status: 400 });
 
-  const totals = cartTotals(items);
+  const settings = await getSettings();
+  const totals = cartTotals(items, {
+    gstPercent: settings.gstPercent,
+    packingCharge: settings.packingCharge,
+  });
   const last = await prisma.order.findFirst({ orderBy: { createdAt: "desc" }, select: { orderNumber: true } });
   const orderNumber = nextOrderNumber(last?.orderNumber);
 
   const order = await prisma.order.create({
     data: {
       orderNumber,
-      userId: session?.user?.role === "CUSTOMER" ? session.user.id : null,
+      userId: session.user.id,
       customerName: customer.name,
       customerPhone: customer.phone,
       customerEmail: customer.email || null,
@@ -38,7 +46,10 @@ export async function POST(req: Request) {
       pincode: customer.pincode,
       subtotal: totals.subtotal,
       savings: totals.savings,
-      total: totals.subtotal,
+      gstPercent: totals.gstPercent,
+      gstAmount: totals.gstAmount,
+      packingCharge: totals.packingCharge,
+      total: totals.total,
       paymentStatus: "pending",
       channel: "Website",
       items: {
@@ -62,18 +73,30 @@ export async function POST(req: Request) {
     },
   });
 
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      name: customer.name,
+      address: customer.address,
+      pincode: customer.pincode,
+      ...(customer.email ? { email: customer.email } : {}),
+    },
+  });
+
+  const amountPaise = totals.total * 100;
+
   if (!razorpayConfigured()) {
     return NextResponse.json({
       demo: true,
       orderId: order.id,
       orderNumber: order.orderNumber,
-      amount: totals.subtotal * 100,
+      amount: amountPaise,
     });
   }
 
   const rzp = getRazorpay();
   const rzOrder = await rzp.orders.create({
-    amount: totals.subtotal * 100,
+    amount: amountPaise,
     currency: "INR",
     receipt: order.orderNumber,
   });

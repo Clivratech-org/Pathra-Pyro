@@ -14,6 +14,8 @@ export type SiteSettings = {
   hours: string;
   mapEmbed: string;
   marquee: string;
+  gstPercent: number;
+  packingCharge: number;
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -31,13 +33,21 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   mapEmbed:
     "https://www.openstreetmap.org/export/embed.html?bbox=77.93%2C9.56%2C77.97%2C9.60&layer=mapnik&marker=9.5810%2C77.9502",
   marquee: "🪔 Genuine Sivakasi Crackers — Direct Factory Rate — Licensed PESO Dealer — Safe Parcel Delivery Across Tamil Nadu 🪔",
+  gstPercent: 18,
+  packingCharge: 0,
 };
 
 export async function getSettings(): Promise<SiteSettings> {
   const row = await prisma.setting.findUnique({ where: { id: "main" } });
   if (!row) return DEFAULT_SETTINGS;
   try {
-    return { ...DEFAULT_SETTINGS, ...(JSON.parse(row.data) as Partial<SiteSettings>) };
+    const parsed = JSON.parse(row.data) as Partial<SiteSettings>;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      gstPercent: Math.max(0, Number(parsed.gstPercent ?? DEFAULT_SETTINGS.gstPercent) || 0),
+      packingCharge: Math.max(0, Math.round(Number(parsed.packingCharge ?? DEFAULT_SETTINGS.packingCharge) || 0)),
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }

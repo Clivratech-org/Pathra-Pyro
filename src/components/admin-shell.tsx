@@ -6,6 +6,7 @@ import { useState } from "react";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard", ic: "📊", group: "Overview" },
+  { href: "/admin/customers", label: "Customers", ic: "👥", group: "Operations" },
   { href: "/admin/leads", label: "Lead Management", ic: "🧾", group: "Operations" },
   { href: "/admin/products", label: "Product Management", ic: "🎆", group: "Operations" },
   { href: "/admin/combos", label: "Combo Packs", ic: "📦", group: "Operations" },
@@ -18,11 +19,13 @@ export function AdminShell({
   children,
   adminName,
   leadCount,
+  cartCustomerCount,
   logout,
 }: {
   children: React.ReactNode;
   adminName: string;
   leadCount: number;
+  cartCustomerCount?: number;
   logout?: React.ReactNode;
 }) {
   const path = usePathname();
@@ -50,6 +53,9 @@ export function AdminShell({
                 <Link key={l.href} href={l.href} className={`sb-link${active ? " active" : ""}`} onClick={() => setOpen(false)}>
                   <span className="ic">{l.ic}</span> {l.label}
                   {l.href === "/admin/leads" && leadCount > 0 && <span className="sb-badge">{leadCount}</span>}
+                  {l.href === "/admin/customers" && (cartCustomerCount || 0) > 0 && (
+                    <span className="sb-badge">{cartCustomerCount}</span>
+                  )}
                 </Link>
               );
             })}

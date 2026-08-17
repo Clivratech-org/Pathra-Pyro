@@ -41,7 +41,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </tbody>
             </table>
           </div>
-          <div className="summary-line total" style={{ marginTop: 12 }}>
+          <div className="summary-line" style={{ marginTop: 12 }}>
+            <span>Subtotal</span><span className="amt">{formatInr(order.subtotal)}</span>
+          </div>
+          {order.gstAmount > 0 && (
+            <div className="summary-line">
+              <span>GST ({order.gstPercent}%)</span><span className="amt">{formatInr(order.gstAmount)}</span>
+            </div>
+          )}
+          {order.packingCharge > 0 && (
+            <div className="summary-line">
+              <span>Packing</span><span className="amt">{formatInr(order.packingCharge)}</span>
+            </div>
+          )}
+          <div className="summary-line total">
             <span>Total</span><span className="amt">{formatInr(order.total)}</span>
           </div>
         </div>

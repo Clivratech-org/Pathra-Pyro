@@ -53,9 +53,20 @@ export async function saveLead(formData: FormData): Promise<ActionResult> {
       notes: String(formData.get("notes") || ""),
       lastContact: new Date(),
     };
-    if (id) await prisma.lead.update({ where: { id }, data });
-    else await prisma.lead.create({ data });
+    if (id) {
+      const existing = await prisma.lead.findUnique({ where: { id } });
+      await prisma.lead.update({
+        where: { id },
+        data: { ...data, userId: existing?.userId },
+      });
+    } else {
+      const match = await prisma.user.findFirst({
+        where: { role: "CUSTOMER", phone: { contains: phone.replace(/\D/g, "").slice(-10) || phone } },
+      });
+      await prisma.lead.create({ data: { ...data, userId: match?.id } });
+    }
     revalidatePath("/admin/leads");
+    revalidatePath("/admin/customers");
     revalidatePath("/admin");
     revalidateTag("leads");
     return { ok: true, message: id ? "Lead updated." : "Lead created." };
@@ -69,6 +80,7 @@ export async function deleteLead(id: string): Promise<ActionResult> {
     await requireAdmin();
     await prisma.lead.delete({ where: { id } });
     revalidatePath("/admin/leads");
+    revalidatePath("/admin/customers");
     revalidatePath("/admin");
     revalidateTag("leads");
     return { ok: true, message: "Lead deleted." };
@@ -135,6 +147,8 @@ export async function saveBusinessSettings(formData: FormData): Promise<ActionRe
       hours: String(formData.get("hours") || ""),
       mapEmbed: String(formData.get("mapEmbed") || ""),
       marquee: String(formData.get("marquee") || ""),
+      gstPercent: Math.max(0, Number(formData.get("gstPercent") || 0) || 0),
+      packingCharge: Math.max(0, Math.round(Number(formData.get("packingCharge") || 0) || 0)),
     };
     await saveSettings(data);
   revalidatePath("/admin/settings");
