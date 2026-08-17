@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ProductCard, type ProductCardData } from "@/components/product-card";
 
+const SORTS = [
+  { value: "pop", label: "Popularity" },
+  { value: "low", label: "Price: Low to High" },
+  { value: "high", label: "Price: High to Low" },
+  { value: "disc", label: "Biggest Discount" },
+];
+
 export function ShopBrowser({
   products,
   categories,
@@ -22,6 +29,7 @@ export function ShopBrowser({
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("pop");
   const [cat, setCat] = useState(initialCat || "all");
+  const [sortOpen, setSortOpen] = useState(false);
 
   const list = useMemo(() => {
     let rows = products.filter((p) => {
@@ -35,6 +43,8 @@ export function ShopBrowser({
       rows = [...rows].sort((a, b) => b.mrp - b.sale - (a.mrp - a.sale));
     return rows;
   }, [products, q, sort, cat]);
+
+  const sortLabel = SORTS.find((s) => s.value === sort)?.label || "Popularity";
 
   return (
     <>
@@ -69,12 +79,35 @@ export function ShopBrowser({
               <div className="search-box">
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." />
               </div>
-              <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
-                <option value="pop">Popularity</option>
-                <option value="low">Price: Low to High</option>
-                <option value="high">Price: High to Low</option>
-                <option value="disc">Biggest Discount</option>
-              </select>
+              <div className={`menu-select${sortOpen ? " open" : ""}`}>
+                <button
+                  type="button"
+                  className="menu-select-btn"
+                  aria-haspopup="listbox"
+                  aria-expanded={sortOpen}
+                  onClick={() => setSortOpen((v) => !v)}
+                >
+                  {sortLabel}
+                </button>
+                {sortOpen && (
+                  <ul className="menu-select-list" role="listbox">
+                    {SORTS.map((s) => (
+                      <li key={s.value}>
+                        <button
+                          type="button"
+                          className={s.value === sort ? "active" : ""}
+                          onClick={() => {
+                            setSort(s.value);
+                            setSortOpen(false);
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <span className="result-count">{list.length} items</span>
             </div>
             {list.length === 0 ? (

@@ -147,7 +147,7 @@ nav.links a.navlink.active, nav.links button.navlink.active{color:var(--night); 
 .hero{position:relative; min-height:92vh; display:flex; align-items:center; overflow:hidden; padding-top:60px;}
 #sparkCanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0;}
 .hero-bg-imgs{position:absolute; inset:0; z-index:0; opacity:0.35; overflow:hidden; pointer-events:none;}
-.hero-bg-imgs img{position:absolute; border-radius:24px; filter:saturate(1.15) brightness(0.85); max-width:none;}
+.hero-bg-imgs img,.hero-bg-imgs svg{position:absolute; border-radius:24px; filter:saturate(1.15) brightness(0.85); max-width:none; height:auto; display:block;}
 .hero-bg-imgs .i1{width:min(280px,40vw); top:8%; right:6%; transform:rotate(6deg); box-shadow:0 30px 60px rgba(0,0,0,.5);}
 .hero-bg-imgs .i2{width:min(220px,34vw); bottom:6%; right:22%; transform:rotate(-8deg); box-shadow:0 30px 60px rgba(0,0,0,.5);}
 .hero .wrap{position:relative; z-index:2; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,0.85fr); gap:40px; align-items:center; width:100%;}
@@ -198,7 +198,7 @@ nav.links a.navlink.active, nav.links button.navlink.active{color:var(--night); 
 .about-grid{display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center;}
 @media(max-width:980px){.about-grid{grid-template-columns:1fr; gap:28px;}}
 .about-imgs{position:relative; height:420px; width:100%; max-width:100%; overflow:hidden; border-radius:20px;}
-.about-imgs img{position:absolute; border-radius:20px; object-fit:cover; box-shadow:0 30px 60px rgba(0,0,0,.5); max-width:none;}
+.about-imgs img,.about-imgs svg{position:absolute; border-radius:20px; object-fit:cover; box-shadow:0 30px 60px rgba(0,0,0,.5); max-width:none; height:auto; display:block;}
 .about-imgs .a1{width:70%; height:78%; top:0; left:0;}
 .about-imgs .a2{width:52%; height:56%; bottom:0; right:0; border:6px solid var(--night); animation:float 7s ease-in-out infinite;}
 @media(max-width:620px){
@@ -358,7 +358,45 @@ footer{background:var(--night-2); border-top:1px solid var(--line); padding:70px
 .search-box{flex:1; min-width:220px; position:relative;}
 .search-box input{width:100%; padding:12px 16px 12px 42px; border-radius:30px; background:rgba(255,255,255,0.04); border:1px solid var(--line); color:var(--cream); font-size:0.88rem;}
 .search-box::before{content:"⌕"; position:absolute; left:16px; top:50%; transform:translateY(-50%); color:var(--gold); font-size:1.1rem;}
-.sort-select{padding:11px 14px; border-radius:30px; background:rgba(255,255,255,0.04); border:1px solid var(--line); color:var(--cream); font-size:0.85rem;}
+/* Native Windows/Chrome dropdowns paint a white list — cream text becomes invisible.
+   Force a light popup with dark text everywhere. Closed control stays dark-themed. */
+select{
+  color-scheme: light;
+}
+select option,
+select optgroup{
+  color:#1a1010 !important;
+  background-color:#ffffff !important;
+}
+.sort-select{
+  padding:11px 14px; border-radius:30px;
+  background:#1a1028; border:1px solid var(--line); color:var(--cream); font-size:0.85rem;
+  color-scheme: light;
+}
+.menu-select{position:relative; min-width:210px;}
+.menu-select-btn{
+  width:100%; text-align:left; padding:11px 36px 11px 16px; border-radius:30px;
+  background:#1a1028; border:1px solid var(--line); color:var(--cream); font-size:0.85rem;
+  position:relative;
+}
+.menu-select-btn::after{
+  content:""; position:absolute; right:16px; top:50%; width:8px; height:8px;
+  border-right:2px solid var(--gold); border-bottom:2px solid var(--gold);
+  transform:translateY(-70%) rotate(45deg);
+}
+.menu-select-list{
+  position:absolute; z-index:40; top:calc(100% + 6px); left:0; right:0;
+  list-style:none; margin:0; padding:6px;
+  background:#1a1028; border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 16px 40px rgba(0,0,0,.45);
+}
+.menu-select-list button{
+  width:100%; text-align:left; background:none; border:none; color:var(--cream);
+  padding:10px 12px; border-radius:10px; font-size:0.85rem;
+}
+.menu-select-list button:hover,.menu-select-list button.active{
+  background:rgba(232,185,77,0.16); color:var(--gold-2);
+}
 .result-count{font-family:var(--mono); font-size:0.76rem; color:var(--cream-dim); white-space:nowrap;}
 
 .qo-toolbar{display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap; align-items:center;}
@@ -594,7 +632,6 @@ table.data tbody tr:hover{background:rgba(232,185,77,0.04);}
 .alert.ok{border-color:var(--green-ok); color:var(--green-ok);}
 
 /* Forms / modals */
-html{color-scheme:dark;}
 .form-stack{display:grid; gap:14px; margin-top:12px;}
 .field{display:flex; flex-direction:column; min-width:0;}
 .field label{font-size:0.78rem; color:var(--cream-dim); margin-bottom:6px; display:block; position:static;}
@@ -604,11 +641,13 @@ html{color-scheme:dark;}
   -webkit-appearance:none; appearance:none;
 }
 .field select{
+  background-color:rgba(12,8,20,0.92);
   background-image:linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%);
   background-position:calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
   background-size:6px 6px, 6px 6px; background-repeat:no-repeat; padding-right:32px;
+  color-scheme: light;
 }
-.field option, .field optgroup{background:#1a1028; color:var(--cream);}
+.field option, .field optgroup{background:#ffffff; color:#1a1010;}
 .field input:-webkit-autofill,
 .field input:-webkit-autofill:hover,
 .field input:-webkit-autofill:focus{

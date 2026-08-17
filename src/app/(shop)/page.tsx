@@ -7,6 +7,7 @@ import { fetchPricedCombos, fetchPricedProducts, toPricedCard } from "@/lib/cata
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { comboItemsAsLabels } from "@/lib/combo-items";
+import { AboutArtFactory, AboutArtShow, HeroArtSky, HeroArtSparkler } from "@/components/site-art";
 import { mediaUrl, waLink } from "@/lib/utils";
 
 export default async function HomePage() {
@@ -30,8 +31,8 @@ export default async function HomePage() {
       <section className="hero" style={{ paddingBottom: 60 }}>
         <SparkCanvas />
         <div className="hero-bg-imgs">
-          <img className="i1" src="/images/hero-1.svg" alt="fireworks display" />
-          <img className="i2" src="/images/hero-2.svg" alt="diwali sparkler" />
+          <HeroArtSky className="i1" />
+          <HeroArtSparkler className="i2" />
         </div>
         <span className="float-deco" style={{ top: "18%", left: "6%" }}>🎇</span>
         <span className="float-deco" style={{ top: "65%", left: "14%", animationDelay: "1.4s" }}>🪔</span>
@@ -79,8 +80,8 @@ export default async function HomePage() {
       <section>
         <div className="wrap about-grid">
           <div className="about-imgs">
-            <img className="a1" src="/images/about-1.svg" alt="fireworks factory" />
-            <img className="a2" src="/images/about-2.svg" alt="colourful fireworks" />
+            <AboutArtFactory className="a1" />
+            <AboutArtShow className="a2" />
           </div>
           <div className="about-copy">
             <div className="eyebrow">Welcome to {settings.businessName}</div>

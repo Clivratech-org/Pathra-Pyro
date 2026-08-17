@@ -1,4 +1,5 @@
 import { getSettings } from "@/lib/settings";
+import { AboutArtFactory, AboutArtShow } from "@/components/site-art";
 
 export default async function AboutPage() {
   const settings = await getSettings();
@@ -15,8 +16,8 @@ export default async function AboutPage() {
       <section>
         <div className="wrap about-grid">
           <div className="about-imgs">
-            <img className="a1" src="/images/about-1.svg" alt="crackers shop" />
-            <img className="a2" src="/images/about-2.svg" alt="sky fireworks" />
+            <AboutArtFactory className="a1" />
+            <AboutArtShow className="a2" />
           </div>
           <div className="about-copy">
             <div className="eyebrow">Company History</div>
