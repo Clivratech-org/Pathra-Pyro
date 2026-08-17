@@ -31,12 +31,29 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
     getNavCategories(),
   ]);
 
+  let quoteReady = false;
+  let customerPackingCharge = 0;
+  let customerShippingCharge = 0;
+  if (session?.user?.role === "CUSTOMER" && session.user.id) {
+    const customer = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { quoteReady: true, packingCharge: true, shippingCharge: true },
+    });
+    if (customer) {
+      quoteReady = customer.quoteReady;
+      customerPackingCharge = customer.packingCharge;
+      customerShippingCharge = customer.shippingCharge;
+    }
+  }
+
   return (
     <AuthSession session={session}>
       <CartProvider
         userId={session?.user?.role === "CUSTOMER" ? session.user.id : null}
         gstPercent={settings.gstPercent}
-        packingCharge={settings.packingCharge}
+        quoteReady={quoteReady}
+        customerPackingCharge={customerPackingCharge}
+        customerShippingCharge={customerShippingCharge}
         whatsapp={settings.whatsapp}
       >
         <div className="bg-glow" />

@@ -39,26 +39,28 @@ export async function POST(req: Request) {
         img: "",
         qty: i.qty,
       })),
-      { gstPercent: settings.gstPercent, packingCharge: settings.packingCharge }
+      { gstPercent: settings.gstPercent, feesPending: true }
     );
     source = "Cart Enquiry";
-    interest = `Cart enquiry · ${totals.count} items · ${formatInr(totals.total)}`;
+    interest = `Cart enquiry · ${totals.count} items · ${formatInr(totals.subtotal)} (excl. packing & shipping)`;
     notes = items.map((i) => `${i.name} × ${i.qty} = ${formatInr(i.sale * i.qty)}`).join("\n");
-    notes += `\nSubtotal ${formatInr(totals.subtotal)}\nGST ${totals.gstPercent}% ${formatInr(totals.gstAmount)}\nPacking ${formatInr(totals.packingCharge)}\nTotal ${formatInr(totals.total)}`;
+    notes += `\nSubtotal ${formatInr(totals.subtotal)}`;
+    if (totals.gstPercent) notes += `\nEst. GST ${totals.gstPercent}% ${formatInr(totals.gstAmount)}`;
+    notes += `\nPacking & shipping: to be quoted by admin`;
     lines.push("I would like to enquire about the items in my cart:");
     for (const i of items) lines.push(`• ${i.name} × ${i.qty} — ${formatInr(i.sale * i.qty)}`);
     lines.push(`Subtotal: ${formatInr(totals.subtotal)}`);
-    if (totals.gstAmount) lines.push(`GST (${totals.gstPercent}%): ${formatInr(totals.gstAmount)}`);
-    if (totals.packingCharge) lines.push(`Packing: ${formatInr(totals.packingCharge)}`);
-    lines.push(`Grand total: ${formatInr(totals.total)}`);
+    if (totals.gstAmount) lines.push(`Est. GST (${totals.gstPercent}%): ${formatInr(totals.gstAmount)}`);
+    lines.push("Please share packing and shipping charges for my order.");
   } else if (kind === "product") {
     const name = String(body.name || "Product").trim();
     const qty = Math.max(1, Number(body.qty) || 1);
     const sale = Number(body.sale) || 0;
     source = "Product Enquiry";
     interest = name;
-    notes = `${name} × ${qty}${sale ? ` @ ${formatInr(sale)}` : ""}`;
+    notes = `${name} × ${qty}${sale ? ` @ ${formatInr(sale)}` : ""}\nPacking & shipping: to be quoted by admin`;
     lines.push(`I would like to enquire about: ${name} (qty ${qty}${sale ? `, ${formatInr(sale)} each` : ""}).`);
+    lines.push("Please share packing and shipping charges for this order.");
   } else {
     const message = String(body.message || "Hi, I want to enquire about crackers").trim();
     interest = message.slice(0, 180);
@@ -86,7 +88,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     ok: true,
-    message: "Enquiry saved. Opening WhatsApp to our team…",
+    message: "Enquiry saved. Our team will confirm packing & shipping charges shortly.",
     url: waLink(settings.whatsapp, lines.join("\n")),
   });
 }

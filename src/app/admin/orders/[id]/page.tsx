@@ -54,6 +54,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <span>Packing</span><span className="amt">{formatInr(order.packingCharge)}</span>
             </div>
           )}
+          {order.shippingCharge > 0 && (
+            <div className="summary-line">
+              <span>Shipping</span><span className="amt">{formatInr(order.shippingCharge)}</span>
+            </div>
+          )}
           <div className="summary-line total">
             <span>Total</span><span className="amt">{formatInr(order.total)}</span>
           </div>

@@ -80,6 +80,9 @@ export type CartLine = {
 export type CartFees = {
   gstPercent?: number;
   packingCharge?: number;
+  shippingCharge?: number;
+  /** When true, packing & shipping are excluded (awaiting admin quote). */
+  feesPending?: boolean;
 };
 
 export function cartTotals(items: CartLine[], fees: CartFees = {}) {
@@ -87,10 +90,23 @@ export function cartTotals(items: CartLine[], fees: CartFees = {}) {
   const subtotal = items.reduce((s, i) => s + i.sale * i.qty, 0);
   const orig = items.reduce((s, i) => s + i.mrp * i.qty, 0);
   const gstPercent = Math.max(0, Number(fees.gstPercent) || 0);
-  const packingCharge = Math.max(0, Math.round(Number(fees.packingCharge) || 0));
+  const feesPending = Boolean(fees.feesPending);
+  const packingCharge = feesPending ? 0 : Math.max(0, Math.round(Number(fees.packingCharge) || 0));
+  const shippingCharge = feesPending ? 0 : Math.max(0, Math.round(Number(fees.shippingCharge) || 0));
   const gstAmount = Math.round(subtotal * gstPercent / 100);
-  const total = subtotal + gstAmount + packingCharge;
-  return { count, subtotal, savings: orig - subtotal, orig, gstPercent, gstAmount, packingCharge, total };
+  const total = subtotal + gstAmount + packingCharge + shippingCharge;
+  return {
+    count,
+    subtotal,
+    savings: orig - subtotal,
+    orig,
+    gstPercent,
+    gstAmount,
+    packingCharge,
+    shippingCharge,
+    feesPending,
+    total,
+  };
 }
 
 export type CartTotals = ReturnType<typeof cartTotals>;

@@ -114,7 +114,7 @@ export function CheckoutForm({ prefill }: { prefill: Prefill; loggedIn?: boolean
           <div className="crumb">Home / Cart / <span>Checkout</span></div>
           <div className="eyebrow">Secure Payment</div>
           <h1>Checkout</h1>
-          <p>Your account details are prefilled. GST and packing charges are applied automatically.</p>
+          <p>Your quote is confirmed. Review delivery details and pay the final amount including packing &amp; shipping.</p>
         </div>
       </div>
       <section style={{ paddingTop: 40 }}>

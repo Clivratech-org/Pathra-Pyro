@@ -19,10 +19,12 @@ export function EnquireButton({
   payload,
   className,
   children,
+  style,
 }: {
   payload: ProductPayload | CartPayload;
   className?: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
   const { requireLogin, items, showToast } = useCart();
   const [busy, setBusy] = useState(false);
@@ -72,7 +74,7 @@ export function EnquireButton({
   }
 
   return (
-    <div style={{ marginTop: 12, width: "100%" }}>
+    <div style={{ marginTop: 12, width: "100%", ...style }}>
       <button type="button" className={className} onClick={onClick} disabled={busy}>
         {busy ? "Sending…" : children}
       </button>

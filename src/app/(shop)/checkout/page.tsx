@@ -1,21 +1,35 @@
 import { auth } from "@/auth";
 import { CheckoutForm } from "@/components/checkout-form";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 export default async function CheckoutPage() {
   const session = await auth();
-  let prefill = { name: "", phone: "", email: "", address: "", pincode: "" };
-  if (session?.user?.id && session.user.role === "CUSTOMER") {
-    const u = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (u) {
-      prefill = {
-        name: u.name,
-        phone: u.phone,
-        email: u.email || "",
-        address: u.address || "",
-        pincode: u.pincode || "",
-      };
-    }
+  if (!session?.user?.id || session.user.role !== "CUSTOMER") {
+    redirect("/login?from=/checkout");
   }
-  return <CheckoutForm prefill={prefill} loggedIn={session?.user?.role === "CUSTOMER"} />;
+
+  const u = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      name: true,
+      phone: true,
+      email: true,
+      address: true,
+      pincode: true,
+      quoteReady: true,
+    },
+  });
+  if (!u) redirect("/login?from=/checkout");
+  if (!u.quoteReady) redirect("/cart?quote=pending");
+
+  const prefill = {
+    name: u.name,
+    phone: u.phone,
+    email: u.email || "",
+    address: u.address || "",
+    pincode: u.pincode || "",
+  };
+
+  return <CheckoutForm prefill={prefill} loggedIn />;
 }

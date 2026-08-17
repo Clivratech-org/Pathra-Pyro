@@ -11,6 +11,19 @@ export async function POST(req: Request) {
   if (!session?.user?.id || session.user.role !== "CUSTOMER") {
     return NextResponse.json({ error: "Please log in to checkout." }, { status: 401 });
   }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!user) return NextResponse.json({ error: "Account not found." }, { status: 401 });
+  if (!user.quoteReady) {
+    return NextResponse.json(
+      {
+        error:
+          "Please enquire about your cart first. Our team will confirm packing and shipping charges before checkout.",
+      },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const customer = body.customer as {
     name: string;
@@ -30,7 +43,8 @@ export async function POST(req: Request) {
   const settings = await getSettings();
   const totals = cartTotals(items, {
     gstPercent: settings.gstPercent,
-    packingCharge: settings.packingCharge,
+    packingCharge: user.packingCharge,
+    shippingCharge: user.shippingCharge,
   });
   const last = await prisma.order.findFirst({ orderBy: { createdAt: "desc" }, select: { orderNumber: true } });
   const orderNumber = nextOrderNumber(last?.orderNumber);
@@ -49,6 +63,7 @@ export async function POST(req: Request) {
       gstPercent: totals.gstPercent,
       gstAmount: totals.gstAmount,
       packingCharge: totals.packingCharge,
+      shippingCharge: totals.shippingCharge,
       total: totals.total,
       paymentStatus: "pending",
       channel: "Website",

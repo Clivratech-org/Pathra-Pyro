@@ -162,6 +162,31 @@ export async function saveBusinessSettings(formData: FormData): Promise<ActionRe
   }
 }
 
+export async function saveCustomerQuote(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const userId = String(formData.get("userId") || "").trim();
+    if (!userId) return { ok: false, error: "Customer not found." };
+    const packingCharge = Math.max(0, Math.round(Number(formData.get("packingCharge") || 0) || 0));
+    const shippingCharge = Math.max(0, Math.round(Number(formData.get("shippingCharge") || 0) || 0));
+    const quoteReady = formData.get("quoteReady") === "on";
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { packingCharge, shippingCharge, quoteReady },
+    });
+
+    revalidatePath(`/admin/customers/${userId}`);
+    revalidatePath("/admin/customers");
+    revalidatePath("/cart");
+    revalidatePath("/checkout");
+    revalidateTag("carts");
+    return { ok: true, message: quoteReady ? "Quote saved. Customer can checkout now." : "Charges saved." };
+  } catch (e) {
+    return fail(e, "Could not save customer quote.");
+  }
+}
+
 export async function saveCategory(formData: FormData): Promise<ActionResult> {
   try {
     await requireAdmin();

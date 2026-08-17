@@ -29,7 +29,12 @@ export default async function AccountPage() {
     })
     .filter(Boolean) as { kind: "product" | "combo"; id: string; qty: number }[];
   const { lines } = raw.length ? await resolveCartLinesAdmin(raw) : { lines: [] };
-  const totals = cartTotals(lines, { gstPercent: settings.gstPercent, packingCharge: settings.packingCharge });
+  const totals = cartTotals(lines, {
+    gstPercent: settings.gstPercent,
+    feesPending: !user.quoteReady,
+    packingCharge: user.packingCharge,
+    shippingCharge: user.shippingCharge,
+  });
 
   return (
     <section>
@@ -66,6 +71,7 @@ export default async function AccountPage() {
               <>
                 <p style={{ color: "var(--cream-dim)", marginBottom: 10 }}>
                   {totals.count} items · {formatInr(totals.total)}
+                  {totals.feesPending ? " (excl. packing & shipping)" : ""}
                 </p>
                 <ul style={{ marginBottom: 14, color: "var(--cream-dim)", fontSize: "0.9rem" }}>
                   {lines.slice(0, 5).map((l) => (

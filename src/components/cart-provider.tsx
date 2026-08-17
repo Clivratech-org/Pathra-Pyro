@@ -25,9 +25,9 @@ type CartContextValue = {
   totals: ReturnType<typeof cartTotals>;
   loggedIn: boolean;
   sessionPending: boolean;
+  quoteReady: boolean;
   whatsapp: string;
   gstPercent: number;
-  packingCharge: number;
   add: (line: Omit<CartLine, "qty">, qty?: number) => void;
   setQty: (key: string, qty: number) => void;
   remove: (key: string) => void;
@@ -43,13 +43,17 @@ export function CartProvider({
   children,
   userId,
   gstPercent = 0,
-  packingCharge = 0,
+  quoteReady = false,
+  customerPackingCharge = 0,
+  customerShippingCharge = 0,
   whatsapp = "",
 }: {
   children: React.ReactNode;
   userId?: string | null;
   gstPercent?: number;
-  packingCharge?: number;
+  quoteReady?: boolean;
+  customerPackingCharge?: number;
+  customerShippingCharge?: number;
   whatsapp?: string;
 }) {
   const { data: session, status } = useSession();
@@ -150,8 +154,14 @@ export function CartProvider({
   const clear = useCallback(() => setItems([]), []);
 
   const totals = useMemo(
-    () => cartTotals(items, { gstPercent, packingCharge }),
-    [items, gstPercent, packingCharge]
+    () =>
+      cartTotals(items, {
+        gstPercent,
+        feesPending: !quoteReady,
+        packingCharge: customerPackingCharge,
+        shippingCharge: customerShippingCharge,
+      }),
+    [items, gstPercent, quoteReady, customerPackingCharge, customerShippingCharge]
   );
   const count = totals.count;
 
@@ -162,9 +172,9 @@ export function CartProvider({
       totals,
       loggedIn,
       sessionPending,
+      quoteReady,
       whatsapp,
       gstPercent,
-      packingCharge,
       add,
       setQty,
       remove,
@@ -179,9 +189,9 @@ export function CartProvider({
       totals,
       loggedIn,
       sessionPending,
+      quoteReady,
       whatsapp,
       gstPercent,
-      packingCharge,
       add,
       setQty,
       remove,

@@ -56,19 +56,22 @@ enum ShipmentStatus {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  email        String?    @unique
-  phone        String     @unique
-  passwordHash String
-  role         Role       @default(CUSTOMER)
-  address      String?
-  pincode      String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  orders       Order[]
-  cartItems    CartItem[]
-  leads        Lead[]
+  id             String     @id @default(cuid())
+  name           String
+  email          String?    @unique
+  phone          String     @unique
+  passwordHash   String
+  role           Role       @default(CUSTOMER)
+  address        String?
+  pincode        String?
+  packingCharge  Int        @default(0)
+  shippingCharge Int        @default(0)
+  quoteReady     Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  orders         Order[]
+  cartItems      CartItem[]
+  leads          Lead[]
 }
 
 model Category {
@@ -179,6 +182,7 @@ model Order {
   gstPercent        Int           @default(0)
   gstAmount         Int           @default(0)
   packingCharge     Int           @default(0)
+  shippingCharge    Int           @default(0)
   total             Int
   paymentStatus     PaymentStatus @default(pending)
   channel           OrderChannel  @default(Website)

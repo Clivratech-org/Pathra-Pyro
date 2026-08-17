@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CustomerQuoteForm } from "@/components/customer-quote-form";
 import { LeadStatusForm } from "@/components/lead-status-form";
 import { prisma } from "@/lib/prisma";
 import { resolveCartLinesAdmin } from "@/lib/checkout";
@@ -44,7 +45,12 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   const { lines, warnings } = raw.length ? await resolveCartLinesAdmin(raw) : { lines: [], warnings: [] };
   const cartQty = customer.cartItems.reduce((s, i) => s + i.qty, 0);
-  const totals = cartTotals(lines, { gstPercent: settings.gstPercent, packingCharge: settings.packingCharge });
+  const totals = cartTotals(lines, {
+    gstPercent: settings.gstPercent,
+    packingCharge: customer.packingCharge,
+    shippingCharge: customer.shippingCharge,
+    feesPending: !customer.quoteReady,
+  });
   const openEnquiries = customer.leads.filter((l) => l.status === "new" || l.status === "contacted").length;
   const paidOrders = customer.orders.filter((o) => o.paymentStatus === "paid").length;
 
@@ -101,6 +107,30 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
       <section className="card panel static customer-section">
         <div className="customer-section-head">
+          <h3>Quote &amp; checkout</h3>
+          <span className={`pill ${customer.quoteReady ? "converted" : "new"}`}>
+            {customer.quoteReady ? "Checkout enabled" : "Awaiting quote"}
+          </span>
+        </div>
+        <p className="cell-sub" style={{ marginBottom: 14 }}>
+          Set packing and shipping for this customer after reviewing their enquiry. Enable checkout when the quote is
+          confirmed.
+        </p>
+        <CustomerQuoteForm
+          customer={{
+            id: customer.id,
+            packingCharge: customer.packingCharge,
+            shippingCharge: customer.shippingCharge,
+            quoteReady: customer.quoteReady,
+          }}
+          subtotal={totals.subtotal}
+          gstPercent={totals.gstPercent}
+          gstAmount={totals.gstAmount}
+        />
+      </section>
+
+      <section className="card panel static customer-section">
+        <div className="customer-section-head">
           <h3>Live cart</h3>
           {cartQty > 0 && <span className="pill new">{cartQty} items</span>}
         </div>
@@ -152,6 +182,18 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                   <div className="customer-total-row">
                     <span>Packing</span>
                     <span>{formatInr(totals.packingCharge)}</span>
+                  </div>
+                )}
+                {totals.shippingCharge > 0 && (
+                  <div className="customer-total-row">
+                    <span>Shipping</span>
+                    <span>{formatInr(totals.shippingCharge)}</span>
+                  </div>
+                )}
+                {totals.feesPending && (
+                  <div className="customer-total-row">
+                    <span>Packing &amp; shipping</span>
+                    <span className="cell-sub">Not quoted yet</span>
                   </div>
                 )}
                 <div className="customer-total-row grand">

@@ -26,8 +26,11 @@ export default async function SettingsPage() {
             <input name="gstPercent" type="number" min={0} step={0.01} defaultValue={s.gstPercent} />
           </div>
           <div className="field">
-            <label>Packing charges (₹, flat)</label>
+            <label>Default packing charge (₹, admin reference)</label>
             <input name="packingCharge" type="number" min={0} step={1} defaultValue={s.packingCharge} />
+            <small style={{ color: "var(--cream-dim)", fontSize: "0.78rem" }}>
+              Per-customer packing &amp; shipping are set on the customer profile after enquiry.
+            </small>
           </div>
         </div>
         <div className="field"><label>Address</label><textarea name="address" rows={2} defaultValue={s.address} /></div>

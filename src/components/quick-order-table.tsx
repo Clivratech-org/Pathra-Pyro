@@ -14,7 +14,7 @@ export function QuickOrderTable({
   products: ProductCardData[];
   categories: string[];
 }) {
-  const { add, showToast, gstPercent, packingCharge, requireLogin } = useCart();
+  const { add, showToast, gstPercent, requireLogin } = useCart();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
   const [qty, setQty] = useState<Record<string, number>>({});
@@ -42,8 +42,8 @@ export function QuickOrderTable({
         img: p.img,
         qty: qty[p.id] || 0,
       }));
-    return cartTotals(lines, { gstPercent, packingCharge });
-  }, [products, qty, gstPercent, packingCharge]);
+    return cartTotals(lines, { gstPercent, feesPending: true });
+  }, [products, qty, gstPercent]);
 
   useEffect(() => {
     if (!filterOpen) return;
