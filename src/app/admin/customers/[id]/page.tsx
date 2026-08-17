@@ -1,13 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { saveLead } from "@/app/admin/actions";
+import { LeadStatusForm } from "@/components/lead-status-form";
 import { prisma } from "@/lib/prisma";
 import { resolveCartLinesAdmin } from "@/lib/checkout";
 import { getSettings } from "@/lib/settings";
 import { cartTotals, formatInr, mediaUrl, waLink } from "@/lib/utils";
-import { TotalsBreakdown } from "@/components/totals-breakdown";
 
 export const dynamic = "force-dynamic";
+
+function initials(name: string) {
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "U"
+  );
+}
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,170 +41,182 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       return null;
     })
     .filter(Boolean) as { kind: "product" | "combo"; id: string; qty: number }[];
+
   const { lines, warnings } = raw.length ? await resolveCartLinesAdmin(raw) : { lines: [], warnings: [] };
   const cartQty = customer.cartItems.reduce((s, i) => s + i.qty, 0);
   const totals = cartTotals(lines, { gstPercent: settings.gstPercent, packingCharge: settings.packingCharge });
+  const openEnquiries = customer.leads.filter((l) => l.status === "new" || l.status === "contacted").length;
+  const paidOrders = customer.orders.filter((o) => o.paymentStatus === "paid").length;
 
   return (
-    <div style={{ display: "grid", gap: 22 }} className="editor-split">
-      <div className="card panel static">
-        <div className="panel-head">
-          <h3>{customer.name}</h3>
-          <a className="btn btn-sm btn-outline" href={waLink(customer.phone)} target="_blank" rel="noreferrer">
+    <div className="customer-detail">
+      <Link href="/admin/customers" className="customer-back">
+        ← Back to customers
+      </Link>
+
+      <section className="card panel static customer-hero">
+        <div className="customer-hero-top">
+          <div className="customer-hero-id">
+            <div className="customer-avatar">{initials(customer.name)}</div>
+            <div>
+              <h2 className="customer-name">{customer.name}</h2>
+              <p className="customer-contact">
+                <a href={`tel:${customer.phone}`}>{customer.phone}</a>
+                {customer.email && (
+                  <>
+                    {" · "}
+                    <a href={`mailto:${customer.email}`}>{customer.email}</a>
+                  </>
+                )}
+              </p>
+              <p className="cell-sub">
+                {customer.address ? `${customer.address}${customer.pincode ? ` · ${customer.pincode}` : ""}` : "No address on file"}
+              </p>
+              <p className="cell-sub">Joined {customer.createdAt.toLocaleDateString("en-IN")}</p>
+            </div>
+          </div>
+          <a className="btn btn-wa btn-sm" href={waLink(customer.phone)} target="_blank" rel="noreferrer">
             WhatsApp customer
           </a>
         </div>
-        <p>{customer.phone}{customer.email ? ` · ${customer.email}` : ""}</p>
-        <p className="cell-sub">{customer.address || "No address on file"} {customer.pincode || ""}</p>
-        <p className="cell-sub" style={{ marginTop: 8 }}>
-          Joined {customer.createdAt.toLocaleDateString("en-IN")}
-        </p>
-      </div>
+        <div className="customer-kpis">
+          <div className="customer-kpi">
+            <strong>{cartQty}</strong>
+            <span>Cart items</span>
+          </div>
+          <div className="customer-kpi">
+            <strong>{customer.orders.length}</strong>
+            <span>Orders</span>
+          </div>
+          <div className="customer-kpi">
+            <strong>{openEnquiries}</strong>
+            <span>Open enquiries</span>
+          </div>
+          <div className="customer-kpi">
+            <strong>{paidOrders}</strong>
+            <span>Paid orders</span>
+          </div>
+        </div>
+      </section>
 
-      <div className="card panel static">
-        <h3 style={{ marginBottom: 14 }}>
-          Live cart
-          {cartQty > 0 && <span className="pill new" style={{ marginLeft: 8 }}>{cartQty} items</span>}
-        </h3>
+      <section className="card panel static customer-section">
+        <div className="customer-section-head">
+          <h3>Live cart</h3>
+          {cartQty > 0 && <span className="pill new">{cartQty} items</span>}
+        </div>
+
         {lines.length === 0 ? (
-          <p className="cell-sub">
+          <p className="cell-sub customer-empty">
             {cartQty > 0
-              ? "Cart has saved items but they could not be loaded. Check product catalogue."
-              : "Cart is empty."}
+              ? "Cart has saved items but they could not be loaded. Check the product catalogue."
+              : "This customer has not added anything to their cart yet."}
           </p>
         ) : (
-          <>
-            {warnings.length > 0 && (
-              <div className="alert error" style={{ marginBottom: 12, fontSize: "0.85rem" }}>
-                {warnings.join(" · ")}
+          <div className="customer-cart-layout">
+            <div className="customer-cart-items">
+              {warnings.length > 0 && (
+                <div className="alert error customer-warn">{warnings.join(" · ")}</div>
+              )}
+              {lines.map((i) => (
+                <div className="customer-cart-row" key={i.key}>
+                  <img src={mediaUrl(i.img)} alt="" className="customer-cart-thumb" />
+                  <div className="customer-cart-info">
+                    <strong>{i.name}</strong>
+                    <span className="cell-sub">{i.cat}</span>
+                  </div>
+                  <div className="customer-cart-qty">Qty {i.qty}</div>
+                  <div className="customer-cart-amt">{formatInr(i.sale * i.qty)}</div>
+                </div>
+              ))}
+            </div>
+            <aside className="customer-cart-totals">
+              <h4>Estimated total</h4>
+              <div className="customer-total-rows">
+                <div className="customer-total-row">
+                  <span>{totals.count} items</span>
+                  <span>{formatInr(totals.subtotal)}</span>
+                </div>
+                {totals.savings > 0 && (
+                  <div className="customer-total-row">
+                    <span>Savings</span>
+                    <span>{formatInr(totals.savings)}</span>
+                  </div>
+                )}
+                {totals.gstAmount > 0 && (
+                  <div className="customer-total-row">
+                    <span>GST ({totals.gstPercent}%)</span>
+                    <span>{formatInr(totals.gstAmount)}</span>
+                  </div>
+                )}
+                {totals.packingCharge > 0 && (
+                  <div className="customer-total-row">
+                    <span>Packing</span>
+                    <span>{formatInr(totals.packingCharge)}</span>
+                  </div>
+                )}
+                <div className="customer-total-row grand">
+                  <span>Grand total</span>
+                  <strong>{formatInr(totals.total)}</strong>
+                </div>
               </div>
-            )}
-            <div className="table-wrap">
-              <table className="data">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((i) => (
-                    <tr key={i.key}>
-                      <td>
-                        <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <img src={mediaUrl(i.img)} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover" }} />
-                          {i.name}
-                        </span>
-                        <div className="cell-sub">{i.cat}</div>
-                      </td>
-                      <td>{i.qty}</td>
-                      <td>{formatInr(i.sale * i.qty)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ maxWidth: 320, marginLeft: "auto", marginTop: 12 }}>
-              <TotalsBreakdown totals={totals} />
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="card panel static">
-        <h3 style={{ marginBottom: 14 }}>Orders</h3>
-        {customer.orders.length === 0 ? (
-          <p className="cell-sub">No orders yet.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Date</th>
-                  <th>Total</th>
-                  <th>Payment</th>
-                  <th>Shipment</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {customer.orders.map((o) => (
-                  <tr key={o.id}>
-                    <td>{o.orderNumber}</td>
-                    <td>{o.createdAt.toLocaleDateString("en-IN")}</td>
-                    <td>{formatInr(o.total)}</td>
-                    <td><span className={`pill ${o.paymentStatus}`}>{o.paymentStatus}</span></td>
-                    <td><span className={`pill ${o.shipment?.status}`}>{o.shipment?.status}</span></td>
-                    <td>
-                      <Link className="icon-mini" href={`/admin/orders/${o.id}`}>👁</Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            </aside>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="card panel static">
-        <h3 style={{ marginBottom: 14 }}>Enquiries</h3>
-        {customer.leads.length === 0 ? (
-          <p className="cell-sub">No enquiries yet.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Source</th>
-                  <th>Details</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customer.leads.map((l) => (
-                  <tr key={l.id}>
-                    <td>{l.createdAt.toLocaleString("en-IN")}</td>
-                    <td>{l.source}</td>
-                    <td>
-                      <strong>{l.interest}</strong>
-                      {l.notes && (
-                        <div className="cell-sub" style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>
-                          {l.notes}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <form
-                        action={async (fd) => {
-                          "use server";
-                          await saveLead(fd);
-                        }}
-                        className="lead-status-form"
-                      >
-                        <input type="hidden" name="id" value={l.id} />
-                        <input type="hidden" name="name" value={l.name} />
-                        <input type="hidden" name="phone" value={l.phone} />
-                        <input type="hidden" name="interest" value={l.interest} />
-                        <input type="hidden" name="source" value={l.source} />
-                        <input type="hidden" name="notes" value={l.notes} />
-                        <select name="status" defaultValue={l.status} className="chip-f">
-                          <option value="new">new</option>
-                          <option value="contacted">contacted</option>
-                          <option value="converted">converted</option>
-                          <option value="lost">lost</option>
-                        </select>
-                        <button className="btn btn-sm btn-outline" type="submit">Update</button>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="customer-split">
+        <section className="card panel static customer-section">
+          <div className="customer-section-head">
+            <h3>Orders</h3>
+            <span className="cell-sub">{customer.orders.length} total</span>
           </div>
-        )}
+          {customer.orders.length === 0 ? (
+            <p className="cell-sub customer-empty">No orders yet.</p>
+          ) : (
+            <div className="customer-order-list">
+              {customer.orders.map((o) => (
+                <article className="customer-order-card" key={o.id}>
+                  <div>
+                    <strong>{o.orderNumber}</strong>
+                    <div className="cell-sub">{o.createdAt.toLocaleString("en-IN")}</div>
+                  </div>
+                  <div className="customer-order-meta">
+                    <span>{formatInr(o.total)}</span>
+                    <span className={`pill ${o.paymentStatus}`}>{o.paymentStatus}</span>
+                    <span className={`pill ${o.shipment?.status || "placed"}`}>{o.shipment?.status || "placed"}</span>
+                  </div>
+                  <Link className="btn btn-sm btn-outline" href={`/admin/orders/${o.id}`}>
+                    View
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="card panel static customer-section">
+          <div className="customer-section-head">
+            <h3>Enquiries</h3>
+            <span className="cell-sub">{customer.leads.length} total</span>
+          </div>
+          {customer.leads.length === 0 ? (
+            <p className="cell-sub customer-empty">No enquiries yet.</p>
+          ) : (
+            <div className="enquiry-cards">
+              {customer.leads.map((l) => (
+                <article className="enquiry-card" key={l.id}>
+                  <div className="enquiry-card-head">
+                    <span className={`pill ${l.status}`}>{l.source}</span>
+                    <time className="cell-sub">{l.createdAt.toLocaleString("en-IN")}</time>
+                  </div>
+                  <h4 className="enquiry-title">{l.interest}</h4>
+                  {l.notes && <pre className="enquiry-notes">{l.notes}</pre>}
+                  <LeadStatusForm lead={l} />
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
