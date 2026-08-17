@@ -6,11 +6,11 @@ import { signOut, useSession } from "next-auth/react";
 
 export function AccountMenu({ userName }: { userName?: string | null }) {
   const { data: session } = useSession();
-  const name =
-    session?.user?.role === "CUSTOMER" ? session.user.name || userName : userName;
-  const loggedIn = Boolean(name);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  const name =
+    session?.user?.role === "CUSTOMER" ? session.user.name || userName : userName;
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -20,7 +20,7 @@ export function AccountMenu({ userName }: { userName?: string | null }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  if (!loggedIn) {
+  if (!name) {
     return (
       <Link href="/login" className="icon-btn" title="Log in">
         👤
@@ -42,7 +42,7 @@ export function AccountMenu({ userName }: { userName?: string | null }) {
         className="account-menu-btn"
         aria-expanded={open}
         aria-haspopup="true"
-        title={name || "Account"}
+        title={name}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="account-avatar">{initials}</span>
