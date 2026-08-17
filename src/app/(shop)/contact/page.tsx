@@ -6,7 +6,10 @@ export default async function ContactPage() {
   const s = await getSettings();
   return (
     <>
-      <div className="page-hero">
+      <div
+        className="page-hero page-hero-photo"
+        style={{ backgroundImage: "url('/images/static-sparkler-heart.jpg')" }}
+      >
         <div className="wrap">
           <div className="crumb">Home / <span>Contact Us</span></div>
           <div className="eyebrow">Get In Touch</div>

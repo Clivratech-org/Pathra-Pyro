@@ -1,11 +1,13 @@
 import { getSettings } from "@/lib/settings";
-import { AboutArtFactory, AboutArtShow } from "@/components/site-art";
 
 export default async function AboutPage() {
   const settings = await getSettings();
   return (
     <>
-      <div className="page-hero">
+      <div
+        className="page-hero page-hero-photo"
+        style={{ backgroundImage: "url('/images/static-sparkler-sunset.jpg')" }}
+      >
         <div className="wrap">
           <div className="crumb">Home / <span>About Us</span></div>
           <div className="eyebrow">Our Story</div>
@@ -16,8 +18,8 @@ export default async function AboutPage() {
       <section>
         <div className="wrap about-grid">
           <div className="about-imgs">
-            <AboutArtFactory className="a1" />
-            <AboutArtShow className="a2" />
+            <img className="a1" src="/images/about-diwali-celebration.jpg" alt="Diwali celebration with sparklers" />
+            <img className="a2" src="/images/about-crowd-fireworks.jpg" alt="Crowd watching fireworks" />
           </div>
           <div className="about-copy">
             <div className="eyebrow">Company History</div>
@@ -31,6 +33,19 @@ export default async function AboutPage() {
               <li>Licensed under Tamil Nadu explosives regulations</li>
             </ul>
           </div>
+        </div>
+      </section>
+      <section style={{ paddingTop: 0 }}>
+        <div className="wrap static-photo-row">
+          <figure className="static-photo-card">
+            <img src="/images/static-sparkler-heart.jpg" alt="Sparkler light painting" />
+          </figure>
+          <figure className="static-photo-card">
+            <img src="/images/static-fireworks-panorama.jpg" alt="Night fireworks panorama" />
+          </figure>
+          <figure className="static-photo-card">
+            <img src="/images/static-firework-fountain.jpg" alt="Golden firework fountain" />
+          </figure>
         </div>
       </section>
       <section style={{ paddingTop: 0 }}>
