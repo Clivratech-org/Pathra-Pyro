@@ -13,7 +13,7 @@ export function WhatsAppCta({
   text?: string;
   children: ReactNode;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "children">) {
-  const { loggedIn, whatsapp } = useCart();
+  const { loggedIn, sessionPending, whatsapp } = useCart();
   const href = loggedIn ? waLink(whatsapp, text) : loginPath(currentFrom());
 
   return (
@@ -23,10 +23,10 @@ export function WhatsAppCta({
       target={loggedIn ? "_blank" : undefined}
       rel="noreferrer"
       onClick={(e) => {
-        if (!loggedIn) {
-          e.preventDefault();
-          requireCustomerLogin(false);
-        }
+        if (loggedIn) return;
+        e.preventDefault();
+        if (sessionPending) return;
+        requireCustomerLogin(false);
         rest.onClick?.(e);
       }}
     >

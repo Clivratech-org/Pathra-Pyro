@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "./cart-provider";
+import { AccountMenu } from "@/components/account-menu";
 import type { SiteSettings } from "@/lib/settings";
 
 const NAV = [
@@ -70,9 +71,7 @@ export function PublicHeader({
             <Link href="/shop" className="icon-btn" title="Search">
               ⌕
             </Link>
-            <Link href={userName ? "/account" : "/login"} className="icon-btn" title={userName || "Account"}>
-              👤
-            </Link>
+            <AccountMenu userName={userName} />
             <Link href="/cart" className="icon-btn" title="Cart">
               🛒<span className="cart-count">{count}</span>
             </Link>

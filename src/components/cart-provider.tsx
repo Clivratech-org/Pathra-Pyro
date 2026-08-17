@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { CartLine } from "@/lib/utils";
 import { cartTotals } from "@/lib/utils";
 import { requireCustomerLogin } from "@/components/login-gate";
@@ -23,6 +24,7 @@ type CartContextValue = {
   count: number;
   totals: ReturnType<typeof cartTotals>;
   loggedIn: boolean;
+  sessionPending: boolean;
   whatsapp: string;
   gstPercent: number;
   packingCharge: number;
@@ -50,11 +52,16 @@ export function CartProvider({
   packingCharge?: number;
   whatsapp?: string;
 }) {
+  const { data: session, status } = useSession();
+  const sessionUserId = session?.user?.role === "CUSTOMER" ? session.user.id : null;
+  const resolvedUserId = sessionUserId || userId || null;
+  const loggedIn = Boolean(resolvedUserId);
+  const sessionPending = status === "loading" && !loggedIn;
+
   const [items, setItems] = useState<CartLine[]>([]);
   const [toast, setToast] = useState("");
   const [ready, setReady] = useState(false);
-  const [synced, setSynced] = useState(!userId);
-  const loggedIn = Boolean(userId);
+  const [synced, setSynced] = useState(!resolvedUserId);
 
   useEffect(() => {
     try {
@@ -73,7 +80,7 @@ export function CartProvider({
 
   useEffect(() => {
     if (!ready) return;
-    if (!userId) {
+    if (!resolvedUserId) {
       setSynced(true);
       return;
     }
@@ -93,16 +100,16 @@ export function CartProvider({
     return () => {
       cancelled = true;
     };
-  }, [userId, ready]);
+  }, [resolvedUserId, ready]);
 
   useEffect(() => {
-    if (!userId || !ready || !synced) return;
+    if (!resolvedUserId || !ready || !synced) return;
     fetch("/api/cart", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items }),
     }).catch(() => {});
-  }, [items, userId, ready, synced]);
+  }, [items, resolvedUserId, ready, synced]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -110,8 +117,8 @@ export function CartProvider({
   }, []);
 
   const requireLogin = useCallback(
-    (action?: () => void) => requireCustomerLogin(loggedIn, action),
-    [loggedIn]
+    (action?: () => void) => requireCustomerLogin(loggedIn, action, sessionPending),
+    [loggedIn, sessionPending]
   );
 
   const add = useCallback(
@@ -154,6 +161,7 @@ export function CartProvider({
       count,
       totals,
       loggedIn,
+      sessionPending,
       whatsapp,
       gstPercent,
       packingCharge,
@@ -170,6 +178,7 @@ export function CartProvider({
       count,
       totals,
       loggedIn,
+      sessionPending,
       whatsapp,
       gstPercent,
       packingCharge,

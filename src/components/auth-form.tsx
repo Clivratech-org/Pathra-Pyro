@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeReturnTo } from "@/components/login-gate";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const params = useSearchParams();
@@ -46,7 +47,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       setBusy(false);
       return;
     }
-    window.location.href = from;
+    window.location.assign(safeReturnTo(params.get("from")));
   }
 
   return (

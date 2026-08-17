@@ -32,7 +32,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   ]);
 
   return (
-    <AuthSession>
+    <AuthSession session={session}>
       <CartProvider
         userId={session?.user?.role === "CUSTOMER" ? session.user.id : null}
         gstPercent={settings.gstPercent}
