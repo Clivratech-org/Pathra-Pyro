@@ -32,24 +32,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         portal: { label: "Portal", type: "text" },
       },
       async authorize(credentials) {
-        const identifier = String(credentials?.identifier || "").trim();
-        const password = String(credentials?.password || "");
-        const portal = String(credentials?.portal || "customer");
-        if (!identifier || !password) return null;
+        try {
+          const identifier = String(credentials?.identifier || "").trim();
+          const password = String(credentials?.password || "");
+          const portal = String(credentials?.portal || "customer");
+          if (!identifier || !password) return null;
 
-        const user = await findCustomerByIdentifier(identifier);
-        if (!user) return null;
-        const ok = await bcrypt.compare(password, user.passwordHash);
-        if (!ok) return null;
-        if (portal === "admin" && user.role !== "ADMIN") return null;
-        if (portal === "customer" && user.role !== "CUSTOMER") return null;
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-        };
+          const user = await findCustomerByIdentifier(identifier);
+          if (!user) return null;
+          const ok = await bcrypt.compare(password, user.passwordHash);
+          if (!ok) return null;
+          if (portal === "admin" && user.role !== "ADMIN") return null;
+          if (portal === "customer" && user.role !== "CUSTOMER") return null;
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+          };
+        } catch (error) {
+          console.error("Credentials authorize failed:", error);
+          return null;
+        }
       },
     }),
   ],
