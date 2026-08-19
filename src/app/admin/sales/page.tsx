@@ -66,9 +66,10 @@ export default async function SalesPage({
                 <td><span className={`pill ${o.paymentStatus}`}>{o.paymentStatus}</span></td>
                 <td><span className="cell-sub">{o.channel}</span></td>
                 <td><span className="cell-sub">{o.createdAt.toLocaleDateString("en-IN")}</span></td>
-                <td style={{ display: "flex", gap: 6 }}>
+                <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <Link className="icon-mini" href={`/admin/orders/${o.id}`} title="View">👁</Link>
-                  <Link className="icon-mini" href={`/admin/orders/${o.id}/invoice`} title="Invoice">🧾</Link>
+                  <a className="icon-mini" href={`/api/orders/${o.id}/invoice`} title="Invoice PDF">🧾</a>
+                  <a className="icon-mini" href={`/api/admin/orders/${o.id}/checklist`} title="Checklist PDF">☑</a>
                 </td>
               </tr>
             ))}

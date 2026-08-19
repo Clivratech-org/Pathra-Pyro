@@ -22,7 +22,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div className="card panel static">
           <div className="panel-head">
             <h3>{order.orderNumber}</h3>
-            <Link href={`/admin/orders/${order.id}/invoice`} className="btn btn-sm btn-outline">Invoice</Link>
+            <div className="order-doc-actions">
+              <a className="btn btn-sm btn-primary" href={`/api/orders/${order.id}/invoice`}>
+                Invoice PDF
+              </a>
+              <a className="btn btn-sm btn-outline" href={`/api/admin/orders/${order.id}/checklist`}>
+                Checklist PDF
+              </a>
+              <Link href={`/admin/orders/${order.id}/invoice`} className="btn btn-sm btn-outline">
+                Preview
+              </Link>
+            </div>
           </div>
           <p>{order.customerName} · {order.customerPhone}</p>
           <p className="cell-sub">{order.address}, {order.pincode}</p>

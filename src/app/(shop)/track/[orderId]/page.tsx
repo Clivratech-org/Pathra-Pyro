@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatInr, mediaUrl, SHIPMENT_STEPS } from "@/lib/utils";
+import { auth } from "@/auth";
 
 export default async function TrackOrderPage({
   params,
@@ -48,6 +49,10 @@ export default async function TrackOrderPage({
     );
   }
 
+  const session = await auth();
+  const canDownloadInvoice =
+    session?.user?.role === "ADMIN" ||
+    (session?.user?.role === "CUSTOMER" && order.userId === session.user.id);
   const status = order.shipment?.status || "placed";
   const idx = SHIPMENT_STEPS.findIndex((s) => s.key === status);
   const cancelled = status === "cancelled";
@@ -123,6 +128,11 @@ export default async function TrackOrderPage({
               <span className="amt">{formatInr(order.total)}</span>
             </div>
             <p className="cell-sub" style={{ marginTop: 12 }}>{order.address}, {order.pincode}</p>
+            {canDownloadInvoice && (
+              <a className="btn btn-primary btn-block" href={`/api/orders/${order.id}/invoice`} style={{ marginTop: 16 }}>
+                Download invoice PDF
+              </a>
+            )}
           </div>
         </div>
       </section>

@@ -227,9 +227,17 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     <span className={`pill ${o.paymentStatus}`}>{o.paymentStatus}</span>
                     <span className={`pill ${o.shipment?.status || "placed"}`}>{o.shipment?.status || "placed"}</span>
                   </div>
-                  <Link className="btn btn-sm btn-outline" href={`/admin/orders/${o.id}`}>
-                    View
-                  </Link>
+                  <div className="customer-order-actions">
+                    <Link className="btn btn-sm btn-outline" href={`/admin/orders/${o.id}`}>
+                      View
+                    </Link>
+                    <a className="btn btn-sm btn-outline" href={`/api/orders/${o.id}/invoice`}>
+                      Invoice
+                    </a>
+                    <a className="btn btn-sm btn-outline" href={`/api/admin/orders/${o.id}/checklist`}>
+                      Checklist
+                    </a>
+                  </div>
                 </article>
               ))}
             </div>

@@ -1015,3 +1015,17 @@ table.data tbody tr:hover{background:rgba(232,185,77,0.04);}
   .admin-app{display:block;}
   body{background:#fff; color:#111;}
 }
+
+.order-doc-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.customer-order-actions{display:flex; gap:8px; flex-wrap:wrap;}
+.invoice-sheet{
+  padding:32px; max-width:720px; margin:0 auto; background:#fff8ea; color:#1a1010;
+}
+.invoice-actions{display:flex; gap:10px; justify-content:flex-end; margin-bottom:20px;}
+.invoice-head{display:flex; justify-content:space-between; gap:16px; margin-bottom:24px; flex-wrap:wrap;}
+.invoice-brand{display:flex; gap:14px; align-items:flex-start;}
+.invoice-brand img{width:64px; height:64px; object-fit:contain; border-radius:12px; background:#fff;}
+.invoice-brand h2{color:#5c0f1f; margin:0 0 6px; font-size:1.3rem;}
+.invoice-brand p{margin:0; font-size:0.82rem; color:#4a3b3b;}
+.invoice-meta{text-align:right; font-size:0.9rem;}
+.invoice-meta strong{display:block; letter-spacing:0.08em; color:#5c0f1f;}

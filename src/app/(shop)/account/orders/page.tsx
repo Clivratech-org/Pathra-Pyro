@@ -48,7 +48,11 @@ export default async function OrdersPage() {
                       <td>{formatInr(o.total)}</td>
                       <td><span className={`pill ${o.paymentStatus}`}>{o.paymentStatus}</span></td>
                       <td><span className={`pill ${o.shipment?.status}`}>{o.shipment?.status}</span></td>
-                      <td><Link href={`/track/${o.orderNumber}`}>Track</Link></td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <Link href={`/track/${o.orderNumber}`}>Track</Link>
+                        {" · "}
+                        <a href={`/api/orders/${o.id}/invoice`}>Invoice PDF</a>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
