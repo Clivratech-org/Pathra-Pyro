@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatOrderChannel } from "@/lib/utils";
 
 export async function GET() {
   const session = await auth();
@@ -16,7 +17,7 @@ export async function GET() {
     String(o.items.reduce((s, i) => s + i.qty, 0)),
     String(o.total),
     o.paymentStatus,
-    o.channel,
+    formatOrderChannel(o.channel),
     o.shipment?.status || "",
     o.createdAt.toISOString(),
   ]);

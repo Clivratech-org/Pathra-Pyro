@@ -1029,3 +1029,16 @@ table.data tbody tr:hover{background:rgba(232,185,77,0.04);}
 .invoice-brand p{margin:0; font-size:0.82rem; color:#4a3b3b;}
 .invoice-meta{text-align:right; font-size:0.9rem;}
 .invoice-meta strong{display:block; letter-spacing:0.08em; color:#5c0f1f;}
+.manual-bill{display:grid; gap:18px; max-width:980px;}
+.manual-catalog{display:grid; gap:8px; margin-bottom:14px; max-height:280px; overflow:auto;}
+.manual-catalog-row{
+  display:flex; justify-content:space-between; gap:12px; align-items:center;
+  width:100%; text-align:left; background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  color:var(--cream); border-radius:12px; padding:10px 12px; cursor:pointer;
+}
+.manual-catalog-row:hover{border-color:var(--gold); background:rgba(232,185,77,0.08);}
+.manual-num{
+  width:88px; background:rgba(255,255,255,0.06); border:1px solid var(--line); color:var(--cream);
+  border-radius:8px; padding:8px 10px; font-family:var(--mono);
+}
+.manual-totals{margin-top:16px; max-width:360px; margin-left:auto;}

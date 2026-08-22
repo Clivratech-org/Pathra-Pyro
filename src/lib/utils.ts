@@ -55,6 +55,15 @@ export function nextOrderNumber(last?: string | null) {
   return `SPW${String(Number.isFinite(n) ? n + 1 : 1001).padStart(4, "0")}`;
 }
 
+export function formatOrderChannel(channel: string) {
+  if (channel === "Website") return "Online";
+  return "Offline";
+}
+
+export function isOfflineOrder(channel: string) {
+  return channel !== "Website";
+}
+
 export const SHIPMENT_STEPS = [
   { key: "placed", label: "Order Placed" },
   { key: "confirmed", label: "Confirmed" },

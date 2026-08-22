@@ -43,6 +43,7 @@ enum OrderChannel {
   WhatsApp
   Phone_Call
   Walk_in
+  Offline
 }
 
 enum ShipmentStatus {

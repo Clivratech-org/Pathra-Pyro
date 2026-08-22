@@ -2,6 +2,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import type { SiteSettings } from "@/lib/settings";
+import { formatOrderChannel } from "@/lib/utils";
 
 export type OrderPdfItem = {
   id: string;
@@ -238,7 +239,7 @@ export async function buildInvoicePdf(order: OrderWithItems, settings: SiteSetti
     ["Invoice no.", order.orderNumber],
     ["Date", order.createdAt.toLocaleDateString("en-IN")],
     ["Payment", order.paymentStatus.toUpperCase()],
-    ["Channel", order.channel.replace("_", " ")],
+    ["Channel", formatOrderChannel(order.channel)],
   ];
   for (const [k, v] of meta) {
     drawText(page, k, metaX, my, regular, 8, MUTED);

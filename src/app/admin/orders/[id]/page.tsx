@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatInr, mediaUrl, SHIPMENT_STEPS } from "@/lib/utils";
+import { formatInr, formatOrderChannel, isOfflineOrder, mediaUrl, SHIPMENT_STEPS } from "@/lib/utils";
 import { updateShipment } from "@/app/admin/actions";
 import Link from "next/link";
 
@@ -36,7 +36,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
           <p>{order.customerName} · {order.customerPhone}</p>
           <p className="cell-sub">{order.address}, {order.pincode}</p>
-          <p style={{ marginTop: 8 }}><span className={`pill ${order.paymentStatus}`}>{order.paymentStatus}</span></p>
+          <p style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <span className={`pill ${order.paymentStatus}`}>{order.paymentStatus}</span>
+            <span className={`pill ${isOfflineOrder(order.channel) ? "contacted" : "new"}`}>
+              {formatOrderChannel(order.channel)}
+            </span>
+          </p>
           <div className="table-wrap" style={{ marginTop: 16 }}>
             <table className="data">
               <thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead>
