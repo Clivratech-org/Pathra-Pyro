@@ -1042,3 +1042,7 @@ table.data tbody tr:hover{background:rgba(232,185,77,0.04);}
   border-radius:8px; padding:8px 10px; font-family:var(--mono);
 }
 .manual-totals{margin-top:16px; max-width:360px; margin-left:auto;}
+.payment-status-form{margin-top:14px; padding:14px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,0.03); display:grid; gap:8px; max-width:420px;}
+.payment-status-form label{font-size:0.78rem; color:var(--cream-dim); font-family:var(--mono); letter-spacing:0.06em; text-transform:uppercase;}
+.payment-status-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+.payment-status-row .admin-select{flex:1; min-width:160px;}

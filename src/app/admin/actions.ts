@@ -486,6 +486,51 @@ export async function deleteCombo(id: string): Promise<ActionResult> {
   }
 }
 
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
+export async function updateOrderPayment(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const orderId = String(formData.get("orderId") || "").trim();
+    const paymentStatus = String(formData.get("paymentStatus") || "") as PaymentStatus;
+    const allowed: PaymentStatus[] = ["pending", "paid", "failed", "refunded"];
+    if (!orderId) return { ok: false, error: "Order not found." };
+    if (!allowed.includes(paymentStatus)) return { ok: false, error: "Invalid payment status." };
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { shipment: true },
+    });
+    if (!order) return { ok: false, error: "Order not found." };
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentStatus },
+    });
+
+    if (paymentStatus === "paid" && order.shipment && order.shipment.status === "placed") {
+      await prisma.shipment.update({
+        where: { id: order.shipment.id },
+        data: { status: "confirmed", note: "Payment marked as paid by admin" },
+      });
+      await prisma.shipmentEvent.create({
+        data: {
+          shipmentId: order.shipment.id,
+          status: "confirmed",
+          note: "Payment received — marked paid by admin",
+        },
+      });
+    }
+
+    revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath("/admin/sales");
+    revalidatePath("/admin");
+    return { ok: true, message: `Payment status updated to ${paymentStatus}.` };
+  } catch (e) {
+    return fail(e, "Could not update payment status.");
+  }
+}
+
 export async function updateShipment(formData: FormData): Promise<ActionResult> {
   try {
     await requireAdmin();

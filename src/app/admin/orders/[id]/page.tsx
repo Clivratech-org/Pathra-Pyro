@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatInr, formatOrderChannel, isOfflineOrder, mediaUrl, SHIPMENT_STEPS } from "@/lib/utils";
 import { updateShipment } from "@/app/admin/actions";
+import { PaymentStatusForm } from "@/components/payment-status-form";
 import Link from "next/link";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -42,6 +43,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {formatOrderChannel(order.channel)}
             </span>
           </p>
+          <PaymentStatusForm orderId={order.id} current={order.paymentStatus} />
           <div className="table-wrap" style={{ marginTop: 16 }}>
             <table className="data">
               <thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead>
