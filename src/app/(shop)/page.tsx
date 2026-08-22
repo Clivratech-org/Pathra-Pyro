@@ -66,14 +66,19 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-          <div className="countdown-card">
-            <div className="eyebrow">Offer ends in</div>
-            <h3>🎆 Diwali Sale Countdown</h3>
-            <Countdown />
-            <div className="quick-order">
-              <Link className="btn btn-primary btn-block" href="/quick-order">Place Quick Order →</Link>
+          {settings.countdownEnabled && (
+            <div className="countdown-card">
+              <div className="eyebrow">{settings.countdownEyebrow}</div>
+              <h3>🎆 {settings.countdownHeading}</h3>
+              <Countdown endsAt={settings.countdownEndsAt} />
+              {settings.countdownNote && <p className="countdown-note">{settings.countdownNote}</p>}
+              <div className="quick-order">
+                <Link className="btn btn-primary btn-block" href="/quick-order">
+                  {settings.countdownButtonLabel}
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 

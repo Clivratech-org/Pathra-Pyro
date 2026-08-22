@@ -312,6 +312,11 @@ nav.links a.navlink.active, nav.links button.navlink.active{color:var(--night); 
 .countdown-grid .box .n{font-family:var(--mono); font-weight:700; font-size:clamp(1.1rem,4vw,1.7rem); color:var(--gold-2); position:relative;}
 .countdown-grid .box .l{font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--cream-dim); margin-top:4px; position:relative;}
 .countdown-card .quick-order{margin-top:22px; display:flex; gap:10px;}
+.countdown-note{
+  margin:16px 0 0; font-size:0.86rem; color:var(--cream); line-height:1.55;
+  background:rgba(232,185,77,0.08); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+}
+.countdown-ended{margin:12px 0 0; font-size:0.8rem; color:var(--marigold); text-align:center;}
 @media(max-width:480px){
   .countdown-card{padding:20px 16px;}
   .countdown-grid{gap:8px;}

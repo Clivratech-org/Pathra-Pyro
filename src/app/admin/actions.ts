@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { serializeComboItems, type ComboItemsData } from "@/lib/combo-items";
 import { prisma } from "@/lib/prisma";
-import { saveSettings, type SiteSettings } from "@/lib/settings";
+import { saveSettings, type SiteSettings, fromIstDatetimeLocal, DEFAULT_SETTINGS } from "@/lib/settings";
 import { removeUpload, saveUpload } from "@/lib/uploads";
 import { slugify } from "@/lib/utils";
 
@@ -151,6 +151,12 @@ export async function saveBusinessSettings(formData: FormData): Promise<ActionRe
       marquee: String(formData.get("marquee") || ""),
       gstPercent: Math.max(0, Number(formData.get("gstPercent") || 0) || 0),
       packingCharge: Math.max(0, Math.round(Number(formData.get("packingCharge") || 0) || 0)),
+      countdownEnabled: formData.get("countdownEnabled") === "on",
+      countdownEyebrow: String(formData.get("countdownEyebrow") || "").trim() || DEFAULT_SETTINGS.countdownEyebrow,
+      countdownHeading: String(formData.get("countdownHeading") || "").trim() || DEFAULT_SETTINGS.countdownHeading,
+      countdownEndsAt: fromIstDatetimeLocal(String(formData.get("countdownEndsAt") || "")),
+      countdownNote: String(formData.get("countdownNote") || "").trim(),
+      countdownButtonLabel: String(formData.get("countdownButtonLabel") || "").trim() || DEFAULT_SETTINGS.countdownButtonLabel,
     };
     await saveSettings(data);
   revalidatePath("/admin/settings");

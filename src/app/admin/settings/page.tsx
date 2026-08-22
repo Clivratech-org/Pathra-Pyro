@@ -1,12 +1,12 @@
 import { saveBusinessSettings } from "@/app/admin/actions";
-import { getSettings } from "@/lib/settings";
+import { getSettings, toIstDatetimeLocal } from "@/lib/settings";
 
 export default async function SettingsPage() {
   const s = await getSettings();
   return (
     <form
       className="card panel static"
-      style={{ maxWidth: 640 }}
+      style={{ maxWidth: 720 }}
       action={async (fd) => {
         "use server";
         await saveBusinessSettings(fd);
@@ -47,6 +47,48 @@ export default async function SettingsPage() {
         <div className="field"><label>Map embed URL</label><input name="mapEmbed" defaultValue={s.mapEmbed} /></div>
         <div className="field"><label>Top bar marquee</label><textarea name="marquee" rows={2} defaultValue={s.marquee} /></div>
       </div>
+
+      <h3 style={{ margin: "28px 0 8px" }}>Homepage offer banner</h3>
+      <p className="cell-sub" style={{ marginBottom: 16 }}>
+        Controls the countdown card on the home page hero. Date and time are in Indian Standard Time.
+      </p>
+      <label className="customer-quote-check" style={{ marginBottom: 14 }}>
+        <input type="checkbox" name="countdownEnabled" defaultChecked={s.countdownEnabled} />
+        <span>Show offer countdown on homepage</span>
+      </label>
+      <div className="form-row">
+        <div className="field">
+          <label>Small label</label>
+          <input name="countdownEyebrow" defaultValue={s.countdownEyebrow} placeholder="Offer ends in" />
+        </div>
+        <div className="field">
+          <label>Heading</label>
+          <input name="countdownHeading" defaultValue={s.countdownHeading} placeholder="Diwali Sale Countdown" />
+        </div>
+        <div className="field">
+          <label>Offer ends at</label>
+          <input
+            name="countdownEndsAt"
+            type="datetime-local"
+            defaultValue={toIstDatetimeLocal(s.countdownEndsAt)}
+            required
+          />
+        </div>
+        <div className="field">
+          <label>Note (optional)</label>
+          <textarea
+            name="countdownNote"
+            rows={3}
+            defaultValue={s.countdownNote}
+            placeholder="e.g. Extra 10% off combo packs until the sale ends. Limited stock."
+          />
+        </div>
+        <div className="field">
+          <label>Button text</label>
+          <input name="countdownButtonLabel" defaultValue={s.countdownButtonLabel} placeholder="Place Quick Order →" />
+        </div>
+      </div>
+
       <div style={{ marginTop: 20 }}>
         <button className="btn btn-primary">Save Changes</button>
       </div>
